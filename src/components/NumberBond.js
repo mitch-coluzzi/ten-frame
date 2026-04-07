@@ -8,7 +8,12 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { theme } from '../constants/theme';
 
-export default function NumberBond({ whole, parts, color = 'green' }) {
+export default function NumberBond({
+  whole,
+  parts,
+  color = 'green',
+  staticParts = [],
+}) {
   const [a, b] = parts;
   const palette =
     color === 'red'
@@ -23,6 +28,15 @@ export default function NumberBond({ whole, parts, color = 'green' }) {
           ink: theme.colors.greenDark,
         };
 
+  const staticPalette = {
+    ring: '#9e9e9e',
+    fill: '#f0f0f0',
+    ink: '#616161',
+  };
+
+  const partPalette = (idx) =>
+    staticParts.includes(idx) ? staticPalette : palette;
+
   return (
     <View style={styles.wrap} pointerEvents="none">
       <Text style={styles.whole}>{whole}</Text>
@@ -36,18 +50,34 @@ export default function NumberBond({ whole, parts, color = 'green' }) {
         <View
           style={[
             styles.circle,
-            { borderColor: palette.ring, backgroundColor: palette.fill },
+            {
+              borderColor: partPalette(0).ring,
+              backgroundColor: partPalette(0).fill,
+            },
           ]}
         >
-          <Text style={[styles.partText, { color: palette.ink }]}>{a}</Text>
+          <Text style={[styles.partText, { color: partPalette(0).ink }]}>
+            {a}
+          </Text>
+          {staticParts.includes(0) && (
+            <Text style={styles.staticTag}>locked</Text>
+          )}
         </View>
         <View
           style={[
             styles.circle,
-            { borderColor: palette.ring, backgroundColor: palette.fill },
+            {
+              borderColor: partPalette(1).ring,
+              backgroundColor: partPalette(1).fill,
+            },
           ]}
         >
-          <Text style={[styles.partText, { color: palette.ink }]}>{b}</Text>
+          <Text style={[styles.partText, { color: partPalette(1).ink }]}>
+            {b}
+          </Text>
+          {staticParts.includes(1) && (
+            <Text style={styles.staticTag}>locked</Text>
+          )}
         </View>
       </View>
     </View>
@@ -104,5 +134,13 @@ const styles = StyleSheet.create({
   partText: {
     fontSize: 38,
     fontWeight: '900',
+  },
+  staticTag: {
+    position: 'absolute',
+    bottom: 6,
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#9e9e9e',
+    letterSpacing: 1,
   },
 });

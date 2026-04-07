@@ -258,6 +258,11 @@ Lillie's tutor (Mitch) clarified the framing: this app's purpose is to **explain
 ### v1.3.1 (April 7, 2026)
 - "Highlight which to tap" — DotGrid renders the next N "should-tap" cells with a pulsing yellow↔orange ring. SolveScreen computes the set per step (last N filled in remove mode, first N empty in add mode) and recomputes after each tap. Guides without forcing — any valid cell still works.
 
+### Session E.4 — v1.4.4 (April 7, 2026): Spectator-aware Take From Ten bond + SUB b ≤ 10
+- **TAKE_FROM_TEN bond fixed for spectator frames.** Previously the strategy card showed 22 = 10 + 2 (which equals 12, not 22 — pedagogically wrong). Now it correctly shows 22 = 10 (locked, gray) + 12. For 33: 33 = 20 (locked) + 13. Tier 2 (no spectators, e.g. 14) keeps the simple 14 = 10 + 4 decomposition.
+- **NumberBond `staticParts` prop**: array of part indices to mark "locked." Locked parts get a gray palette (border, fill, ink) and a tiny "locked" label. Visually communicates "this part doesn't change."
+- **Subtraction b ≤ 10**: subtrahend now capped at 10 since the strategies only handle single-ten-frame removal. New `SUB_B_MAX` constant in HomeScreen, applied in `b` clamp, on-change handler, and canSolve check.
+
 ### Session E.3 — v1.4.3 (April 7, 2026): Bond satellites on every screen + Watch stutter fix
 - **Bond satellites everywhere**: every TenFrame on Home, Solve, and Sandbox shows a bond satellite circle below it with the current dot count (green palette). It's a permanent counter — as Lillie removes/adds dots, the satellite updates live.
 - **Strategy bond step still wins**: during a Solve bond step (Break Apart, Make a Ten), the strategy's `bondTargets`/`bondParts` mapping replaces the count satellite for the affected frames, with the strategy color (red for Break Apart, green for Make a Ten).

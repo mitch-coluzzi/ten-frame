@@ -30,11 +30,32 @@ export default function StrategySelectScreen({ route, navigation }) {
   let cardB = null;
 
   if (isSub) {
-    // SUB — Take From Ten: decompose minuend into (10 + ones)
+    // SUB — Take From Ten: decompose minuend.
+    // Tier 2 (no spectators): a = 10 + ones (e.g. 14 = 10 + 4)
+    // Tier 3+ (has spectators): a = staticPart + workingPart
+    //   where staticPart = sum of spectator frames, workingPart = active group (10 + ones)
+    const tens = Math.floor(a / 10);
     const remTen = 10 - b;
+    let bondConfig;
+    if (tens >= 2) {
+      const staticPart = 10 * (tens - 1);
+      const workingPart = a - staticPart; // = 10 + ones
+      bondConfig = {
+        whole: a,
+        parts: [staticPart, workingPart],
+        color: 'green',
+        staticParts: [0],
+      };
+    } else {
+      bondConfig = {
+        whole: a,
+        parts: [10, ones],
+        color: 'green',
+      };
+    }
     cardA = {
       strategy: STRATEGIES.TAKE_FROM_TEN,
-      bond: { whole: a, parts: [10, ones], color: 'green' },
+      bond: bondConfig,
       lines: [`10 − ${b}`, `${remTen} + ${ones}`],
       bg: theme.colors.greenBg,
       border: theme.colors.greenDark,

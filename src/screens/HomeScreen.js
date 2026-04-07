@@ -24,6 +24,7 @@ import { OPERATIONS, STRATEGIES } from '../logic/strategyEngine';
 import { theme } from '../constants/theme';
 
 const MAX = 40;
+const SUB_B_MAX = 10; // subtrahend capped at 10 (single ten-frame's worth)
 
 function clampInt(raw, min, max) {
   const n = parseInt(raw, 10);
@@ -54,7 +55,8 @@ export default function HomeScreen({ navigation }) {
 
   const b = useMemo(() => {
     if (a === null || bRaw === null) return null;
-    if (operation === OPERATIONS.SUBTRACT) return Math.min(bRaw, a);
+    if (operation === OPERATIONS.SUBTRACT)
+      return Math.min(bRaw, a, SUB_B_MAX);
     return Math.min(bRaw, MAX - a);
   }, [a, bRaw, operation]);
 
@@ -70,7 +72,9 @@ export default function HomeScreen({ navigation }) {
     a >= 1 &&
     b !== null &&
     b >= 1 &&
-    (operation === OPERATIONS.SUBTRACT ? b <= a : a + b <= MAX);
+    (operation === OPERATIONS.SUBTRACT
+      ? b <= a && b <= SUB_B_MAX
+      : a + b <= MAX);
 
   const handleSolve = () => {
     if (!canSolve) return;
@@ -164,12 +168,13 @@ export default function HomeScreen({ navigation }) {
                   setBText(String(Math.max(0, MAX - av)));
                 }
               }
-              // For subtraction, clamp b so b ≤ a
+              // For subtraction, clamp b so b ≤ min(a, SUB_B_MAX)
               if (operation === OPERATIONS.SUBTRACT && clean !== '') {
                 const av = parseInt(clean, 10);
                 const bv = parseInt(bText || '0', 10);
-                if (!Number.isNaN(av) && !Number.isNaN(bv) && bv > av) {
-                  setBText(String(av));
+                const cap = Math.min(av, SUB_B_MAX);
+                if (!Number.isNaN(av) && !Number.isNaN(bv) && bv > cap) {
+                  setBText(String(Math.max(0, cap)));
                 }
               }
             }}
@@ -189,7 +194,7 @@ export default function HomeScreen({ navigation }) {
               const av = parseInt(aText || '0', 10) || 0;
               const cap =
                 operation === OPERATIONS.SUBTRACT
-                  ? Math.min(MAX, av)
+                  ? Math.min(SUB_B_MAX, av)
                   : Math.max(0, MAX - av);
               setBText(sanitizeInput(t, cap));
             }}
