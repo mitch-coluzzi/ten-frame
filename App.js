@@ -13,7 +13,7 @@ import { theme } from './src/constants/theme';
 
 const Stack = createStackNavigator();
 
-export const APP_VERSION = '1.3.1';
+export const APP_VERSION = '1.4.0';
 
 export default function App() {
   return (

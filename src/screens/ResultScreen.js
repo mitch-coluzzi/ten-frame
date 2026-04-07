@@ -22,7 +22,7 @@ function alternateStrategy(strategy) {
 }
 
 export default function ResultScreen({ route, navigation }) {
-  const { operation, a, b, strategy } = route.params;
+  const { operation, a, b, strategy, taughtIt } = route.params;
   const isAdd = operation === OPERATIONS.ADD;
   const answer = isAdd ? a + b : a - b;
   const tier = getTier(operation, a, b);
@@ -54,6 +54,10 @@ export default function ResultScreen({ route, navigation }) {
         >
           {answer}
         </Animated.Text>
+
+        {taughtIt && (
+          <Text style={styles.celebrate}>You taught it yourself! 🎉</Text>
+        )}
 
         {showPattern && (
           <View style={styles.patternCard}>
@@ -115,6 +119,13 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: theme.colors.dotFilled,
     marginBottom: theme.spacing.lg,
+  },
+  celebrate: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: theme.colors.greenDark,
+    marginBottom: theme.spacing.md,
+    textAlign: 'center',
   },
   patternCard: {
     backgroundColor: theme.colors.frameBg,

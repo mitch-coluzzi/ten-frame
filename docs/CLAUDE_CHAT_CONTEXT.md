@@ -258,7 +258,17 @@ Lillie's tutor (Mitch) clarified the framing: this app's purpose is to **explain
 ### v1.3.1 (April 7, 2026)
 - "Highlight which to tap" — DotGrid renders the next N "should-tap" cells with a pulsing yellow↔orange ring. SolveScreen computes the set per step (last N filled in remove mode, first N empty in add mode) and recomputes after each tap. Guides without forcing — any valid cell still works.
 
-### Pedagogical Framing — "Show one, Do one, Teach one" (proposed for next session)
+### Session E — v1.4.0 (April 7, 2026): Show / Do / Teach SHIPPED
+Linear three-phase sequence per problem, in keeping with the "explain not test" framing. Each problem now runs:
+1. **Show** — app auto-plays the demonstration. Frames mutate on a timer (~600ms/dot), instruction text and bond surface in sync, no input required. Skip-ahead button available.
+2. **Do** — current guided flow with highlights showing which cells to tap and hint pulses for wrong taps.
+3. **Teach** — bare execution. Highlights, instruction card, and bond all hidden. Hints still catch wrong taps (gentle, not punishing). "Your turn!" banner is the only on-screen prompt.
+
+Phase indicator pills at top of SolveScreen (👁 Watch / 🖐 Try / 🎓 Show me) show current state. Frame state resets between phases. ResultScreen shows "You taught it yourself! 🎉" celebration line when reached via the Teach phase.
+
+**Also fixed in this session:** ScrollView wasn't scrollable on web because react-native-web requires an explicit `style={{flex:1}}` on the ScrollView itself (not just contentContainerStyle). Applied fix to Home, Strategy, Solve, and Sandbox screens.
+
+### Pedagogical Framing — "Show one, Do one, Teach one" (original proposal — now shipped)
 Mitch suggested the classical pedagogy model. Mapping it to this app:
 - **Show one** — Auto-play mode. The app demonstrates the problem itself: dots animate out, instruction text surfaces in sync, no input required. (Future: pair with audio narration via expo-speech.)
 - **Do one** — Current Solve flow. Highlights guide which cells to tap. Hints catch wrong taps. She drives, app supports.

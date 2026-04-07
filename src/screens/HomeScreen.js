@@ -77,7 +77,10 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scroll}
+      >
         {/* Operation toggle */}
         <View style={styles.opToggle}>
           <Pressable
@@ -175,9 +178,12 @@ const INPUT_W = 110;
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.appBg },
+  scrollView: { flex: 1 },
   scroll: {
     padding: theme.spacing.lg,
     alignItems: 'center',
+    flexGrow: 1,
+    paddingBottom: theme.spacing.xl,
   },
   opToggle: {
     flexDirection: 'row',

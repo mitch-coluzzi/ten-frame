@@ -86,7 +86,10 @@ export default function StrategySelectScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scroll}
+      >
         <Text style={styles.problem}>
           {a} {isSub ? '−' : '+'} {b}
         </Text>
@@ -99,10 +102,12 @@ export default function StrategySelectScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.appBg },
+  scrollView: { flex: 1 },
   scroll: {
     padding: theme.spacing.lg,
     alignItems: 'center',
     paddingBottom: theme.spacing.xl * 2,
+    flexGrow: 1,
   },
   problem: {
     fontSize: 64,
