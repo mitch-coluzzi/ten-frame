@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Ten Frame Math",
+    "slug": "ten-frame-math",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#fdf6ec"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#fdf6ec"
+      },
+      "package": "com.coluzzi.tenframemath"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

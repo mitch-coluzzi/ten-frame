@@ -1,74 +1,108 @@
-# Ten-Frame — Session Context
+# Ten Frame Math — Claude Code Session Context
 
 > **Read this first, every session. ~2 minute load.**
-> Last updated: v0.1 · April 7, 2026 (initial scaffold)
-> For: Jessie's classroom · Owner: Mitch Coluzzi
+> Last updated: v1.0.0 · Session A · April 7, 2026
+> For: Lillie (age 6) · Owner: Mitch Coluzzi
 
 ---
 
 ## What This Product Is
 
-A browser-based **ten-frame emulator** — a digital version of the K-2 math manipulative used to teach number sense, subitizing, and decomposition (numbers 0–10, optionally 0–20 with a double frame). Tablet-first. Built for use in Jessie's classroom; secondary audience is at-home practice.
+A guided, interactive **ten-frame subtraction tool** teaching two foundational mental-math strategies to a 6-year-old:
 
-Sibling household apps (same pattern, same hosting model):
-- `animal-mixer` — Lillie's animal mix-and-match
-- `CassieProject` — Cassie's app
-- `ten-frame` — this repo
+1. **Take from the Ten** — attack the active ten directly, then combine remainders
+2. **Break Apart the Subtrahend** — decompose the subtrahend to zero out the ones first, then handle the remainder
+
+Numbers range **0–40** (up to 4 ten-frames). Frames are classified into three visual roles per problem: **spectator** (dimmed, locked), **active-ten** (bright, full ten that will be touched), **active-ones** (bright, partial frame of leftover ones).
+
+Tablet-first, portrait only, fully local — no backend, no API, no env vars.
 
 ---
 
-## The One File
+## The File Tree
 
 ```
-index.html      (~1KB — shell: topbar, frame container, number display)
-styles.css      (~2KB — tokens, frame grid, counter, responsive)
-app.js          (~1.5KB — IIFE: state, render, tap/keyboard, reset, toggle)
-README.md
-docs/
-  CONTEXT.md              (this file — Claude Code bootstrap)
-  CLAUDE_CHAT_CONTEXT.md  (Claude.ai design-session bootstrap)
+ten-frame/
+├── package.json
+├── app.json                       (Expo config — portrait, version 1.0.0)
+├── babel.config.js                (reanimated plugin)
+├── App.js                         (Stack navigator + APP_VERSION constant)
+├── README.md
+├── src/
+│   ├── components/
+│   │   ├── TenFrame.js            (single bordered frame)
+│   │   ├── DotGrid.js             (2x5 layout, role-aware states)
+│   │   └── NumberBond.js          (Session B — Strategy 2 split visual)
+│   ├── screens/
+│   │   ├── HomeScreen.js          (number entry + live frame display)
+│   │   ├── StrategySelectScreen.js  (Session B)
+│   │   ├── SolveScreen.js         (Session B)
+│   │   └── ResultScreen.js        (Session B)
+│   ├── logic/
+│   │   ├── frameClassifier.js     (spectator/active-ten/active-ones roles)
+│   │   ├── problemLadder.js       (Session B — tier 1–5)
+│   │   └── strategyEngine.js      (Session B — step sequencer)
+│   └── constants/
+│       └── theme.js               (colors, fonts, sizing, animation timings)
+└── docs/
+    ├── CONTEXT.md                 (this file)
+    └── CLAUDE_CHAT_CONTEXT.md     (Claude.ai design-session bootstrap, full spec)
 ```
-
-**Vanilla HTML/CSS/JS, no build step, no framework, no dependencies.** All tokens in `:root`. Single IIFE in `app.js`. If the file grows past ~400 lines, split into per-feature IIFEs following the SoldFast module-split pattern.
 
 ---
 
 ## Architecture Rules (Locked)
 
-- **No frameworks, no build step.** Vanilla JS only. Pure static site.
-- **No iframes.** Single `index.html` shell.
-- **CSS variables only** — all tokens at `:root`. No hardcoded colors in component CSS.
-- **Module scoping (if/when split)** — every module's CSS prefixed with feature scope.
-- **Tablet-first responsive** — touch targets ≥44px, no hover-only affordances, `touch-action: manipulation`.
-- **Accessibility first** — keyboard operable, ARIA labels on counters, `aria-live` on number display, screen-reader-friendly.
-- **No localStorage/sessionStorage for preferences.** If preferences enter scope, they go to Supabase via a `user_preferences` JSONB pattern (mirrors SoldFast).
-- **No external runtime dependencies** — no CDN scripts, no analytics tags, no fonts beyond system stack.
+- **Expo managed workflow.** No bare workflow, no native ejection.
+- **Local state only** — `useState` / `useReducer`. No Supabase, no API, no env vars.
+- **Portrait orientation only** (`app.json`).
+- **Theme is the single source of truth** for colors, fonts, sizing, animation timings. No hardcoded colors anywhere outside `theme.js`.
+- **Reanimated 2** for all animations (Session B). No `Animated` API mixing.
+- **No localStorage / AsyncStorage for preferences in v1.x.** Score tracking deferred to v1.1.
+- **Tap targets ≥44px** — driven by `theme.sizing.dotSize`.
+- **Minuend constraint:** 1–40. **Subtrahend constraint:** 1..minuend (never below zero).
 
 ---
 
-## Stack & Deployment
+## Stack & Versioning
 
-- **Frontend:** Static HTML/CSS/JS
-- **Host:** Railway — auto-deploys on push to `main`
-- **DB:** Supabase (deferred — only added if persistence/multi-student/auth required)
-- **Repo:** `mitch-coluzzi/ten-frame` (public)
-- **Production URL:** TBD (Railway domain assignment pending)
+- **Expo:** ~51.0.0
+- **React Native:** 0.74.5
+- **React Navigation:** stack v6
+- **Reanimated:** ~3.10.1
+- **App version:** `APP_VERSION` constant in `App.js` — currently `1.0.0`. Displayed in stack header (`Ten Frame Math  v1.0.0`).
+- **Bump rule:** patch on each Claude Code session that ships code; minor on session boundaries (Session A=1.0, Session B=1.1, etc); major at classroom-pilot quality.
+- **Repo:** `mitch-coluzzi/ten-frame` (treated as the spec's `/ten-frame/` module root)
 - **Local clone:** `/mnt/c/Users/mitch/OneDrive/Desktop/ten-frame`
-- **Local design folder:** `/mnt/c/Users/mitch/OneDrive/Desktop/JessieProject` (handoff scratch, non-repo)
-- **Version constant:** TBD — to be added once feature work begins. Format: `{session}.{patch}` mirroring SoldFast.
 
 ---
 
 ## Workflow Rules (mirrored from SoldFast CRM)
 
-- **Tool approvals:** All tool calls auto-approved. Do not pause for confirmation on file edits, bash commands, git operations, or pushes. Test environment.
+- **Tool approvals:** All tool calls auto-approved. Test environment.
 - **Git identity:** Mitch Coluzzi / mitch@soldfast.com
-- **Git commands:** All git commands pre-approved — no confirmation needed. Run `cd` then git as two separate Bash calls (never compound with `&&`). `git push` authorized — no longer manual. Single-branch workflow (`main` only).
-- **Commit protocol:** Anytime the user prompts to commit, ALWAYS update BOTH `docs/CONTEXT.md` AND `docs/CLAUDE_CHAT_CONTEXT.md` to reflect the work just completed BEFORE committing. Include both files in the same commit.
-- **No stalling on commits:** Run push commands immediately, don't idle.
-- **Verify protocol:** When asked to verify/check tree, report current version (TBD constant) and the session it corresponds to.
-- **Schema migrations** (if/when Supabase added): Additive (ADD COLUMN, CREATE TABLE, CREATE INDEX, ADD CONSTRAINT) authorized without approval when in session spec. Destructive (DROP, ALTER type, bulk UPDATE/DELETE) require manual approval. Always verify with `information_schema` query after execution.
-- **WSL environment:** pip packages installed with `--break-system-packages` if Python ever enters the stack.
+- **Git commands:** All git commands pre-approved. Run `cd` then git as separate Bash calls (never `&&` chained). `git push` authorized.
+- **Single-branch workflow:** `main` only.
+- **Commit protocol:** Anytime the user prompts to commit, ALWAYS update BOTH `docs/CONTEXT.md` AND `docs/CLAUDE_CHAT_CONTEXT.md` to reflect work just completed BEFORE committing. Include both files in the same commit.
+- **No stalling on commits:** push immediately, don't idle.
+- **Verify protocol:** When asked to verify/check tree, report current `APP_VERSION` from `App.js` and the session it corresponds to.
+
+---
+
+## Frame Classifier — How It Works
+
+`src/logic/frameClassifier.js` exports `classifyFrames(minuend, subtrahend)`:
+
+- Builds frames by packing `minuend` dots left→right, top→bottom, 10 per frame.
+- Identifies the **rightmost partial frame** (1–9 dots) → `active-ones`.
+- Identifies the **rightmost full frame** (10 dots) → `active-ten`.
+- All other full frames to the left → `spectator`.
+- If `minuend` is a clean multiple of 10, there is no `active-ones` — the last full frame becomes the active-ten.
+
+Example — `34 − 5`:
+- Frames 1, 2 → spectator (the 20)
+- Frame 3 → active-ten (the full 10)
+- Frame 4 → active-ones (the 4)
 
 ---
 
@@ -76,36 +110,19 @@ docs/
 
 | Module | Status | Notes |
 |---|---|---|
-| Frame core | ✅ v0.1 scaffold | 10 cells, tap-to-fill, counter render, reset, show/hide number |
-| Number display | ✅ v0.1 | Live count, ARIA live region |
-| Double frame (0–20) | ⬜ TBD | Open design question |
-| Counter style options | ⬜ TBD | Dots / chips / themed icons — open question |
-| Drag-from-tray | ⬜ TBD | Alternative to tap-to-fill |
-| Target prompts | ⬜ TBD | Teacher-set "build the number 7" mode |
-| Audio (number-name) | ⬜ TBD | Open question |
-| Persistence (Supabase) | ⬜ TBD | Only if multi-student/save state needed |
-
----
-
-## Open Design Questions (must resolve before next build session)
-
-1. Single ten-frame or double (teen numbers)?
-2. Counter style: dots, fillable circles, draggable chips, themed icons?
-3. Tap-to-fill (current) vs. drag-from-tray vs. both?
-4. "Show the number" toggle: keep, default-on, or always-on?
-5. Teacher controls: target prompts, randomize, reset-all, lock?
-6. Sound effects? Audio number-name on fill?
-7. Persistence needed? (drives Supabase yes/no)
-8. Multi-student / save state? (drives auth yes/no)
-9. Color scheme: classroom-neutral or kid-bright? (current: orange counters on cream)
-
----
-
-## Env / Secrets
-
-- No `.env` in repo. Railway-managed.
-- `.env` files from Cassie/Lillie projects to be copied if needed — none found in local trees as of init; likely live only in Railway dashboard.
-- No DB credentials yet (no Supabase project linked).
+| `theme.js` | ✅ Session A | Colors, sizing, fonts, animation timings |
+| `frameClassifier.js` | ✅ Session A | Role assignment + buildFrames helper |
+| `DotGrid.js` | ✅ Session A | 2x5 cells, filled/empty/spectator visual states |
+| `TenFrame.js` | ✅ Session A | Bordered card wrapper, spectator opacity |
+| `HomeScreen.js` | ✅ Session A | Number entry, live frame preview, Solve stub |
+| `App.js` | ✅ Session A | Stack navigator, version in header |
+| `problemLadder.js` | ⬜ Session B | Tier 1–5 from minuend/subtrahend |
+| `strategyEngine.js` | ⬜ Session B | Step sequencer for both strategies |
+| `StrategySelectScreen.js` | ⬜ Session B | Two-choice picker |
+| `SolveScreen.js` | ⬜ Session B | Guided step interaction |
+| `ResultScreen.js` | ⬜ Session B | Answer reveal + "Did you notice?" |
+| `NumberBond.js` | ⬜ Session B | Strategy 2 subtrahend split visual |
+| Reanimated layer | ⬜ Session B | Per spec animation table |
 
 ---
 
@@ -113,4 +130,16 @@ docs/
 
 | Date | Session | Version | Notes |
 |---|---|---|---|
-| 2026-04-07 | init | v0.1 | Repo created, scaffold pushed (`index.html` + `styles.css` + `app.js` + `README.md`). Tap-to-fill working baseline. `docs/` added with CONTEXT + CLAUDE_CHAT_CONTEXT. |
+| 2026-04-07 | A | 1.0.0 | Pivot from erroneous vanilla scaffold. Expo scaffold (`package.json`, `app.json`, `babel.config.js`, `App.js`), `theme.js`, `frameClassifier.js`, `DotGrid.js`, `TenFrame.js`, `HomeScreen.js` shipped. Live frame preview wired to minuend/subtrahend inputs. Solve button stubbed pending Session B. |
+
+---
+
+## Pre-Build Note for Mitch
+
+`npm install` has not been run yet — `node_modules/` does not exist locally. Before launching the simulator/device, run:
+
+```bash
+cd /mnt/c/Users/mitch/OneDrive/Desktop/ten-frame
+npm install
+npx expo start
+```
