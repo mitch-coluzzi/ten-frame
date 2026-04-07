@@ -1,6 +1,6 @@
 // HomeScreen.js
-// Operation toggle (+/-), math-style stacked input, live ten-frame preview,
-// Solve routes to StrategySelect or directly to Solve depending on tier/op.
+// +/− toggle, horizontal "14 + 5" expression, live frame preview,
+// Solve + Free Play buttons.
 
 import React, { useState, useMemo } from 'react';
 import {
@@ -13,7 +13,11 @@ import {
   SafeAreaView,
 } from 'react-native';
 import TenFrame from '../components/TenFrame';
-import { classifyFrames, buildFrames, classifyAddInitial } from '../logic/frameClassifier';
+import {
+  classifyFrames,
+  buildFrames,
+  classifyAddInitial,
+} from '../logic/frameClassifier';
 import { needsStrategyChoice } from '../logic/problemLadder';
 import { OPERATIONS, STRATEGIES } from '../logic/strategyEngine';
 import { theme } from '../constants/theme';
@@ -36,7 +40,6 @@ export default function HomeScreen({ navigation }) {
   const a = clampInt(aText, 0, MAX);
   const bRaw = clampInt(bText, 0, MAX);
 
-  // For subtraction, b can't exceed a. For addition, a+b can't exceed MAX.
   const b = useMemo(() => {
     if (a === null || bRaw === null) return null;
     if (operation === OPERATIONS.SUBTRACT) return Math.min(bRaw, a);
@@ -51,7 +54,10 @@ export default function HomeScreen({ navigation }) {
   }, [a, b, operation]);
 
   const canSolve =
-    a !== null && a >= 1 && b !== null && b >= 1 &&
+    a !== null &&
+    a >= 1 &&
+    b !== null &&
+    b >= 1 &&
     (operation === OPERATIONS.SUBTRACT ? b <= a : a + b <= MAX);
 
   const handleSolve = () => {
@@ -108,43 +114,35 @@ export default function HomeScreen({ navigation }) {
           </Pressable>
         </View>
 
-        {/* Frames row */}
+        {/* Frame preview */}
         <View style={styles.framesWrap}>
           {frames.map((f) => (
-            <TenFrame key={f.index} dotCount={f.dotCount} role={f.role} />
+            <TenFrame key={f.index} cells={f.cells} role={f.role} />
           ))}
         </View>
 
-        {/* Math-style stacked input */}
-        <View style={styles.mathStack}>
-          <View style={styles.mathRow}>
-            <View style={styles.signSlot} />
-            <TextInput
-              style={[styles.input, styles.inputStart]}
-              value={aText}
-              onChangeText={setAText}
-              keyboardType="number-pad"
-              maxLength={2}
-            />
-          </View>
-          <View style={styles.mathRow}>
-            <View style={styles.signSlot}>
-              <Text style={styles.signText}>{opSymbol}</Text>
-            </View>
-            <TextInput
-              style={[
-                styles.input,
-                operation === OPERATIONS.SUBTRACT
-                  ? styles.inputSub
-                  : styles.inputAdd,
-              ]}
-              value={bText}
-              onChangeText={setBText}
-              keyboardType="number-pad"
-              maxLength={2}
-            />
-          </View>
-          <View style={styles.divider} />
+        {/* Horizontal expression: [a] [op] [b] */}
+        <View style={styles.expression}>
+          <TextInput
+            style={[styles.input, styles.inputStart]}
+            value={aText}
+            onChangeText={setAText}
+            keyboardType="number-pad"
+            maxLength={2}
+          />
+          <Text style={styles.opSign}>{opSymbol}</Text>
+          <TextInput
+            style={[
+              styles.input,
+              operation === OPERATIONS.SUBTRACT
+                ? styles.inputSub
+                : styles.inputAdd,
+            ]}
+            value={bText}
+            onChangeText={setBText}
+            keyboardType="number-pad"
+            maxLength={2}
+          />
         </View>
 
         <Pressable
@@ -158,13 +156,22 @@ export default function HomeScreen({ navigation }) {
         >
           <Text style={styles.solveBtnText}>Solve</Text>
         </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.freeBtn,
+            pressed && { opacity: 0.85 },
+          ]}
+          onPress={() => navigation.navigate('Sandbox')}
+        >
+          <Text style={styles.freeBtnText}>Free Play</Text>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const SIGN_W = 60;
-const INPUT_W = 130;
+const INPUT_W = 110;
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.appBg },
@@ -201,24 +208,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: theme.spacing.lg,
   },
-  mathStack: {
-    alignItems: 'flex-end',
-    marginBottom: theme.spacing.lg,
-  },
-  mathRow: {
+  expression: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 4,
-  },
-  signSlot: {
-    width: SIGN_W,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  signText: {
-    fontSize: 56,
-    fontWeight: '900',
-    color: theme.colors.ink,
+    marginBottom: theme.spacing.lg,
   },
   input: {
     width: INPUT_W,
@@ -228,6 +221,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 56,
     fontWeight: '900',
+    marginHorizontal: theme.spacing.sm,
   },
   inputStart: {
     borderColor: theme.colors.greenDark,
@@ -244,12 +238,11 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.greenBg,
     color: theme.colors.greenDark,
   },
-  divider: {
-    width: SIGN_W + INPUT_W,
-    height: 5,
-    backgroundColor: theme.colors.ink,
-    borderRadius: 3,
-    marginTop: 6,
+  opSign: {
+    fontSize: 56,
+    fontWeight: '900',
+    color: theme.colors.ink,
+    marginHorizontal: theme.spacing.xs,
   },
   solveBtn: {
     backgroundColor: theme.colors.accent,
@@ -262,6 +255,20 @@ const styles = StyleSheet.create({
   solveBtnText: {
     color: '#fff',
     fontSize: theme.fontSizes.title,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  freeBtn: {
+    backgroundColor: theme.colors.frameBg,
+    borderWidth: 3,
+    borderColor: theme.colors.frameBorder,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.xl,
+    borderRadius: 16,
+  },
+  freeBtnText: {
+    color: theme.colors.ink,
+    fontSize: theme.fontSizes.body,
     fontWeight: '800',
     letterSpacing: 1,
   },

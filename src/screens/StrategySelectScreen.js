@@ -1,10 +1,19 @@
 // StrategySelectScreen.js
-// Two strategy cards, numerals first, minimal text. Pre-reader friendly.
+// Two strategy cards. Each leads with a bond visualization showing
+// what's being decomposed, then the operation chain in big numerals.
 
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, SafeAreaView } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+} from 'react-native';
 import { theme } from '../constants/theme';
 import { OPERATIONS, STRATEGIES } from '../logic/strategyEngine';
+import NumberBond from '../components/NumberBond';
 
 export default function StrategySelectScreen({ route, navigation }) {
   const { operation, a, b } = route.params;
@@ -15,100 +24,112 @@ export default function StrategySelectScreen({ route, navigation }) {
     navigation.navigate('Solve', { operation, a, b, strategy });
   };
 
-  // Numeric chains rendered as big-number lines
-  let cardA, cardB;
+  let cardA = null;
+  let cardB = null;
+
   if (isSub) {
-    // Sub: take from ten / break apart
+    // SUB — Take From Ten: decompose minuend into (10 + ones)
     const remTen = 10 - b;
-    const second = b - ones;
     cardA = {
       strategy: STRATEGIES.TAKE_FROM_TEN,
+      bond: { whole: a, parts: [10, ones], color: 'green' },
       lines: [`10 − ${b} = ${remTen}`, `${remTen} + ${ones} = ${remTen + ones}`],
+      bg: theme.colors.greenBg,
+      border: theme.colors.greenDark,
+      ink: theme.colors.greenDark,
     };
+    // SUB — Break Apart: decompose subtrahend
+    const second = b - ones;
     cardB = {
       strategy: STRATEGIES.BREAK_APART,
-      lines: [`${b} = ${ones} + ${second}`, `${ones} − ${ones} = 0`, `10 − ${second} = ${10 - second}`],
+      bond: { whole: b, parts: [ones, second], color: 'red' },
+      lines: [`${ones} − ${ones} = 0`, `10 − ${second} = ${10 - second}`],
+      bg: theme.colors.redBg,
+      border: theme.colors.redDark,
+      ink: theme.colors.redDark,
     };
   } else {
-    // Add: make a ten / direct
+    // ADD — Make a Ten: decompose addend into (fillToTen + overflow)
     const open = ones === 0 ? 10 : 10 - ones;
     const overflow = b - open;
     cardA = {
       strategy: STRATEGIES.MAKE_A_TEN,
-      lines: [`${b} = ${open} + ${overflow}`, `${a} + ${open} = ${a + open}`, `${a + open} + ${overflow} = ${a + b}`],
+      bond: { whole: b, parts: [open, overflow], color: 'green' },
+      lines: [
+        `${a} + ${open} = ${a + open}`,
+        `${a + open} + ${overflow} = ${a + b}`,
+      ],
+      bg: theme.colors.greenBg,
+      border: theme.colors.greenDark,
+      ink: theme.colors.greenDark,
     };
-    cardB = null; // addition only offers Make-a-Ten when crossing
   }
+
+  const renderCard = (card) => (
+    <Pressable
+      style={({ pressed }) => [
+        styles.card,
+        { backgroundColor: card.bg, borderColor: card.border },
+        pressed && styles.cardPressed,
+      ]}
+      onPress={() => choose(card.strategy)}
+    >
+      <NumberBond {...card.bond} />
+      <View style={styles.divider} />
+      {card.lines.map((line, i) => (
+        <Text key={i} style={[styles.cardLine, { color: card.ink }]}>
+          {line}
+        </Text>
+      ))}
+    </Pressable>
+  );
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.problem}>
           {a} {isSub ? '−' : '+'} {b}
         </Text>
-
-        <Pressable
-          style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-          onPress={() => choose(cardA.strategy)}
-        >
-          {cardA.lines.map((line, i) => (
-            <Text key={i} style={styles.cardLine}>
-              {line}
-            </Text>
-          ))}
-        </Pressable>
-
-        {cardB && (
-          <Pressable
-            style={({ pressed }) => [styles.card, styles.cardAlt, pressed && styles.cardPressed]}
-            onPress={() => choose(cardB.strategy)}
-          >
-            {cardB.lines.map((line, i) => (
-              <Text key={i} style={[styles.cardLine, styles.cardLineAlt]}>
-                {line}
-              </Text>
-            ))}
-          </Pressable>
-        )}
-      </View>
+        {cardA && renderCard(cardA)}
+        {cardB && renderCard(cardB)}
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.appBg },
-  container: {
-    flex: 1,
+  scroll: {
     padding: theme.spacing.lg,
     alignItems: 'center',
+    paddingBottom: theme.spacing.xl * 2,
   },
   problem: {
     fontSize: 64,
     fontWeight: '900',
     color: theme.colors.ink,
-    marginVertical: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
   },
   card: {
     width: '100%',
     maxWidth: 480,
-    backgroundColor: theme.colors.greenBg,
-    borderColor: theme.colors.greenDark,
     borderWidth: 4,
     borderRadius: 20,
     padding: theme.spacing.lg,
     marginBottom: theme.spacing.md,
     alignItems: 'center',
   },
-  cardAlt: {
-    backgroundColor: theme.colors.redBg,
-    borderColor: theme.colors.redDark,
-  },
   cardPressed: { transform: [{ scale: 0.97 }], opacity: 0.85 },
+  divider: {
+    height: 3,
+    width: '70%',
+    backgroundColor: '#d9d2c2',
+    marginVertical: theme.spacing.md,
+    borderRadius: 2,
+  },
   cardLine: {
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: '900',
-    color: theme.colors.greenDark,
     marginVertical: 4,
   },
-  cardLineAlt: { color: theme.colors.redDark },
 });

@@ -240,7 +240,25 @@ plugins: ['react-native-reanimated/plugin']
 - "Start with" input → green / dark green palette (border, label, background tint).
 - Inputs displayed vertically (Start with → minus sign → Take away) instead of horizontally.
 
-### Session C — v1.2.0 (April 7, 2026)
+### Session D — v1.3.0 (April 7, 2026)
+**Pedagogy pass — explain mode, not test mode.**
+
+Lillie's tutor (Mitch) clarified the framing: this app's purpose is to **explain** how subtraction/addition works, not to test whether she knows the answer. That shifts how mistakes, hints, and progression should feel — every interaction should reinforce the concept, never gate her.
+
+**Shipped:**
+- Frame state migrated to `cells: boolean[10]` arrays — every cell independently tappable.
+- DotGrid modes: 'remove' (any filled), 'add' (any empty), 'sandbox' (any toggle).
+- Hint/forgive system: wrong taps anywhere on target frame OR on a non-target frame trigger a yellow border-ring pulse on the target — gentle "try here" instead of silent rejection. SolveScreen wraps each frame in outer Pressable to catch wrong-region taps.
+- "Try the other way" button on Result for sub problems with two strategies (TAKE_FROM_TEN ↔ BREAK_APART). Replays the same problem with the alternate path so cross-strategy comparison happens immediately.
+- Sandbox / Free Play screen: 4 frames, free tap-to-toggle, live total readout. No problem, no judgment.
+- Home expression layout switched from stacked column to horizontal `14 + 5` row.
+- NumberBond redesigned for emphasis: muted-gray whole on top, angled connector lines, two parts tightly grouped inside a colored pill (oval) with `+` between — visually says "this number is made of these two pieces."
+- StrategySelectScreen now embeds the NumberBond visual at the top of each card, then the operation chain in big numerals.
+
+### Open / Deferred from prior design discussion
+- **Forecast / predict-the-answer feature** — held for next session pending the "explain not test" framing reconsideration. May reshape (e.g. show the answer up front, then walk through WHY).
+- **Audio narration via expo-speech** — held; arguably the highest-impact accessibility win for a 6yo non-reader.
+- **Problem sets / doubles drills** — deferred.
 **Addition mode added + visual + UX overhaul:**
 - Ten-frames now vertical 5×2 (was horizontal 2×5). Column-major fill order: top-to-bottom column 1, then column 2.
 - Math-style stacked input on Home: right-aligned with the operator sign on the LEFT of the bottom number, divider line below — like the column subtraction layout kids learn in school.

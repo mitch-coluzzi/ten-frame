@@ -1,5 +1,6 @@
 // ResultScreen.js
-// Big answer reveal. Play Again → Home.
+// Big answer reveal. Optional "Try the other way" button when an alternate
+// strategy applies. Play Again returns Home.
 
 import React, { useEffect, useMemo } from 'react';
 import {
@@ -12,14 +13,21 @@ import {
 } from 'react-native';
 import { theme } from '../constants/theme';
 import { shouldShowPattern, getTier } from '../logic/problemLadder';
-import { OPERATIONS } from '../logic/strategyEngine';
+import { OPERATIONS, STRATEGIES } from '../logic/strategyEngine';
+
+function alternateStrategy(strategy) {
+  if (strategy === STRATEGIES.TAKE_FROM_TEN) return STRATEGIES.BREAK_APART;
+  if (strategy === STRATEGIES.BREAK_APART) return STRATEGIES.TAKE_FROM_TEN;
+  return null;
+}
 
 export default function ResultScreen({ route, navigation }) {
-  const { operation, a, b } = route.params;
+  const { operation, a, b, strategy } = route.params;
   const isAdd = operation === OPERATIONS.ADD;
   const answer = isAdd ? a + b : a - b;
   const tier = getTier(operation, a, b);
   const showPattern = shouldShowPattern(operation, a, b);
+  const altStrategy = alternateStrategy(strategy);
 
   const scaleAnim = useMemo(() => new Animated.Value(0.4), []);
   useEffect(() => {
@@ -54,6 +62,25 @@ export default function ResultScreen({ route, navigation }) {
               {equivalentA} {isAdd ? '+' : '−'} {b} = {equivalentAns}
             </Text>
           </View>
+        )}
+
+        {altStrategy && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.altBtn,
+              pressed && { opacity: 0.85 },
+            ]}
+            onPress={() =>
+              navigation.replace('Solve', {
+                operation,
+                a,
+                b,
+                strategy: altStrategy,
+              })
+            }
+          >
+            <Text style={styles.altBtnText}>Try the other way</Text>
+          </Pressable>
         )}
 
         <Pressable
@@ -95,7 +122,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderRadius: 18,
     padding: theme.spacing.lg,
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
     alignItems: 'center',
   },
   patternTitle: {
@@ -108,6 +135,21 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '900',
     color: theme.colors.ink,
+  },
+  altBtn: {
+    backgroundColor: theme.colors.frameBg,
+    borderWidth: 3,
+    borderColor: theme.colors.frameBorder,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.xl,
+    borderRadius: 16,
+    marginBottom: theme.spacing.md,
+  },
+  altBtnText: {
+    color: theme.colors.ink,
+    fontSize: theme.fontSizes.body,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   btn: {
     backgroundColor: theme.colors.accent,

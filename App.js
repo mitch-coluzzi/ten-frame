@@ -8,11 +8,12 @@ import HomeScreen from './src/screens/HomeScreen';
 import StrategySelectScreen from './src/screens/StrategySelectScreen';
 import SolveScreen from './src/screens/SolveScreen';
 import ResultScreen from './src/screens/ResultScreen';
+import SandboxScreen from './src/screens/SandboxScreen';
 import { theme } from './src/constants/theme';
 
 const Stack = createStackNavigator();
 
-export const APP_VERSION = '1.2.0';
+export const APP_VERSION = '1.3.0';
 
 export default function App() {
   return (
@@ -34,7 +35,7 @@ export default function App() {
         <Stack.Screen
           name="StrategySelect"
           component={StrategySelectScreen}
-          options={{ title: 'Pick a strategy' }}
+          options={{ title: 'Pick a way' }}
         />
         <Stack.Screen
           name="Solve"
@@ -45,6 +46,11 @@ export default function App() {
           name="Result"
           component={ResultScreen}
           options={{ title: 'Result', headerLeft: () => null }}
+        />
+        <Stack.Screen
+          name="Sandbox"
+          component={SandboxScreen}
+          options={{ title: 'Free Play' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

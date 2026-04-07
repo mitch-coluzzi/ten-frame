@@ -1,8 +1,7 @@
 // SolveScreen.js
-// Guided steps for both subtraction and addition.
-//   - Subtract: tap rightmost-filled cell in target frame to remove
-//   - Add:      tap leftmost-empty cell in target frame to fill
-// Auto-advances when step's actionCount is hit.
+// Cells-based guided steps. Any cell in target frame can be tapped (in
+// the appropriate state for current mode). Wrong taps trigger a hint
+// pulse on the target frame instead of doing nothing.
 
 import React, { useState, useMemo, useEffect } from 'react';
 import {
@@ -16,7 +15,11 @@ import {
 } from 'react-native';
 import TenFrame from '../components/TenFrame';
 import NumberBond from '../components/NumberBond';
-import { classifyFrames, classifyAddInitial } from '../logic/frameClassifier';
+import {
+  classifyFrames,
+  classifyAddInitial,
+  countCells,
+} from '../logic/frameClassifier';
 import { buildSteps, OPERATIONS } from '../logic/strategyEngine';
 import { theme } from '../constants/theme';
 
@@ -24,7 +27,6 @@ export default function SolveScreen({ route, navigation }) {
   const { operation, a, b, strategy } = route.params;
   const isAdd = operation === OPERATIONS.ADD;
 
-  // Initial frame state — frozen role classification
   const initialFrames = useMemo(() => {
     if (isAdd) return classifyAddInitial(a, b);
     return classifyFrames(a, b);
@@ -36,14 +38,16 @@ export default function SolveScreen({ route, navigation }) {
   );
 
   const [frames, setFrames] = useState(() =>
-    initialFrames.map((f) => ({ ...f }))
+    initialFrames.map((f) => ({ ...f, cells: f.cells.slice() }))
   );
   const [stepIndex, setStepIndex] = useState(0);
   const [actionCountThisStep, setActionCountThisStep] = useState(0);
+  const [hintTrigger, setHintTrigger] = useState(0);
 
   const currentStep = steps[stepIndex];
   const isLastStep = stepIndex === steps.length - 1;
 
+  // Pulse for the instruction card
   const pulseAnim = useMemo(() => new Animated.Value(0), []);
   useEffect(() => {
     pulseAnim.setValue(0);
@@ -54,43 +58,44 @@ export default function SolveScreen({ route, navigation }) {
     }).start();
   }, [stepIndex, pulseAnim]);
 
-  // Resolve which frame is the target for the current step.
-  // For 'next-frame' (addition overflow), it's the frame after the last
-  // currently-non-empty frame whose finalDotCount > current dotCount.
+  // Resolve target frame
   const targetFrameIndex = useMemo(() => {
     if (!currentStep.target) return -1;
     if (currentStep.target === 'next-frame') {
-      // Find first frame whose finalDotCount > current dotCount
+      // First frame whose finalCells has a true beyond current cells
       for (let i = 0; i < frames.length; i++) {
         const f = frames[i];
-        if ((f.finalDotCount ?? f.dotCount) > f.dotCount && f.role !== 'active-ones' && f.dotCount === 0) {
+        if (countCells(f.cells) === 0 && f.finalCells && countCells(f.finalCells) > 0) {
           return i;
         }
       }
-      // Fallback: any frame with dotCount === 0 and finalDotCount > 0
-      for (let i = 0; i < frames.length; i++) {
-        if (frames[i].dotCount === 0 && (frames[i].finalDotCount ?? 0) > 0) return i;
-      }
       return -1;
     }
-    // 'active-ten' or 'active-ones' — match by role
     return frames.findIndex((f) => f.role === currentStep.target);
   }, [currentStep, frames]);
 
-  const handleCellPress = (frameIdx) => {
-    if (frameIdx !== targetFrameIndex) return;
+  const triggerHint = () => setHintTrigger((n) => n + 1);
+
+  // A cell tap from the target frame's DotGrid (already validated by mode there)
+  const handleValidCellPress = (frameIdx, cellIdx) => {
+    if (frameIdx !== targetFrameIndex) {
+      triggerHint();
+      return;
+    }
     if (!currentStep.action) return;
 
     setFrames((prev) => {
-      const next = prev.map((f) => ({ ...f }));
+      const next = prev.map((f) => ({ ...f, cells: f.cells.slice() }));
       const tgt = next[frameIdx];
       if (currentStep.action === 'remove') {
-        if (tgt.dotCount <= 0) return prev;
-        tgt.dotCount -= 1;
+        if (!tgt.cells[cellIdx]) {
+          // Shouldn't happen — DotGrid only makes filled cells tappable in remove mode
+          return prev;
+        }
+        tgt.cells[cellIdx] = false;
       } else if (currentStep.action === 'add') {
-        const cap = tgt.finalDotCount ?? 10;
-        if (tgt.dotCount >= cap) return prev;
-        tgt.dotCount += 1;
+        if (tgt.cells[cellIdx]) return prev;
+        tgt.cells[cellIdx] = true;
       }
       return next;
     });
@@ -102,6 +107,19 @@ export default function SolveScreen({ route, navigation }) {
       }
       return updated;
     });
+  };
+
+  // Outer-frame tap = "user tapped this frame's area but didn't hit a valid cell"
+  const handleFrameTap = (frameIdx) => {
+    if (frameIdx !== targetFrameIndex || !currentStep.target) {
+      triggerHint();
+    }
+    // If they DID tap target frame but somehow missed all valid cells
+    // (e.g. tried to remove an empty cell), DotGrid wouldn't fire onCellPress
+    // and the outer Pressable will catch it → also hint.
+    else {
+      triggerHint();
+    }
   };
 
   const advanceStep = () => {
@@ -124,21 +142,34 @@ export default function SolveScreen({ route, navigation }) {
         </Text>
 
         <View style={styles.framesWrap}>
-          {frames.map((f, idx) => (
-            <TenFrame
-              key={f.index}
-              dotCount={f.dotCount}
-              role={f.role}
-              interactive={idx === targetFrameIndex}
-              isTarget={idx === targetFrameIndex}
-              mode={currentStep.action === 'add' ? 'add' : 'remove'}
-              onCellPress={() => handleCellPress(idx)}
-            />
-          ))}
+          {frames.map((f, idx) => {
+            const isTarget = idx === targetFrameIndex;
+            // Wrap in outer Pressable to catch wrong-frame / wrong-cell taps
+            return (
+              <Pressable
+                key={f.index}
+                onPress={() => handleFrameTap(idx)}
+                style={styles.frameTouch}
+              >
+                <TenFrame
+                  cells={f.cells}
+                  role={f.role}
+                  interactive={isTarget}
+                  isTarget={isTarget}
+                  mode={currentStep.action === 'add' ? 'add' : 'remove'}
+                  hintTrigger={hintTrigger}
+                  onCellPress={(cellIdx) => handleValidCellPress(idx, cellIdx)}
+                />
+              </Pressable>
+            );
+          })}
         </View>
 
         {currentStep.showBond && (
-          <NumberBond whole={currentStep.bondWhole} parts={currentStep.bondParts} />
+          <NumberBond
+            whole={currentStep.bondWhole}
+            parts={currentStep.bondParts}
+          />
         )}
 
         <Animated.View
@@ -201,6 +232,9 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
     marginBottom: theme.spacing.lg,
+  },
+  frameTouch: {
+    // No styling — pressable wrapper for wrong-tap detection
   },
   instructionCard: {
     backgroundColor: theme.colors.frameBg,

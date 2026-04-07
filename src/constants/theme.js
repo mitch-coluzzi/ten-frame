@@ -25,6 +25,9 @@ export const theme = {
     redDark: '#b71c1c',
     redBg: '#fdecea',
 
+    // Hint pulse — gentle "try here" yellow
+    hintGlow: '#ffc107',
+
     // Text / UI
     ink: '#3a2418',            // very dark brown — text
     inkSoft: '#7a5340',        // muted brown — secondary text

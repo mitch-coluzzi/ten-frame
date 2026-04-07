@@ -1,51 +1,73 @@
 // TenFrame.js
-// A single ten-frame: bordered card with a 2x5 DotGrid inside.
-// Spectator role applies reduced opacity. Glow ring on active+interactive frames.
+// Cells-based ten-frame card. Hint glow ring fires briefly on wrong-tap.
 
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Animated, StyleSheet } from 'react-native';
 import DotGrid from './DotGrid';
 import { theme } from '../constants/theme';
 
 export default function TenFrame({
-  dotCount,
+  cells,
   role,
   interactive,
   onCellPress,
   isTarget,
   mode = 'remove',
+  hintTrigger = 0,
 }) {
   const isSpectator = role === 'spectator';
+
+  // Hint pulse — animates a yellow border ring when hintTrigger increments
+  const hintAnim = useRef(new Animated.Value(0)).current;
+  const lastHint = useRef(0);
+  useEffect(() => {
+    if (hintTrigger > lastHint.current) {
+      lastHint.current = hintTrigger;
+      hintAnim.setValue(1);
+      Animated.timing(hintAnim, {
+        toValue: 0,
+        duration: 900,
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [hintTrigger, hintAnim]);
+
   return (
-    <View
+    <Animated.View
       style={[
         styles.frame,
         isSpectator && { opacity: theme.opacity.spectator },
         isTarget && styles.frameTarget,
+        {
+          borderColor: hintAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [
+              isTarget ? theme.colors.dotFilled : theme.colors.frameBorder,
+              theme.colors.hintGlow,
+            ],
+          }),
+        },
       ]}
     >
       <DotGrid
-        dotCount={dotCount}
-        role={role}
+        cells={cells}
         interactive={interactive}
         onCellPress={onCellPress}
         mode={mode}
       />
-    </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   frame: {
     backgroundColor: theme.colors.frameBg,
-    borderColor: theme.colors.frameBorder,
     borderWidth: theme.sizing.frameBorderWidth,
     borderRadius: theme.sizing.frameRadius,
     padding: theme.sizing.framePadding,
     margin: theme.spacing.sm,
   },
   frameTarget: {
-    borderColor: theme.colors.dotFilled,
     shadowColor: theme.colors.dotFilled,
     shadowOpacity: 0.5,
     shadowRadius: 12,

@@ -1,66 +1,56 @@
 // frameClassifier.js
-// Assigns each ten-frame a role for a given subtraction problem.
-//
-// Roles:
-//   'spectator'   — full ten-frame uninvolved in the subtraction (dimmed, locked)
-//   'active-ten'  — the full ten-frame the subtraction will touch
-//   'active-ones' — the partial frame representing leftover ones
-//   'empty'       — frame with zero dots (not rendered or rendered blank)
-//
-// A "frame" in the output is a 2x5 grid (10 cells). For numbers 0–40 we
-// use up to 4 frames. Frame index 0 is the leftmost / first frame.
-//
-// classifyFrames returns an array of frame descriptors:
-//   [{ index, dotCount, role }]
-//
-// Inputs:
-//   minuend    — the starting number (1–40)
-//   subtrahend — the number being subtracted (1..minuend)
-//
-// Rules:
-// - Total dots = minuend, packed left-to-right, top-to-bottom across frames.
-// - The "ones frame" is the rightmost partial frame (dotCount < 10 && > 0).
-//   If minuend is a clean multiple of 10, there is NO ones frame; the last
-//   full frame becomes the active-ten and there is no active-ones.
-// - The "active-ten" is the rightmost FULL frame.
-// - All other full frames to the left of active-ten are spectators.
-// - When subtrahend <= ones count, neither active-ten nor spectators are
-//   touched mathematically — but for the teaching model we still classify
-//   the rightmost full frame as the active-ten so the strategy UI has a
-//   consistent target. (Tier 1 problems short-circuit this in problemLadder.)
+// Builds frames + assigns roles for subtraction problems.
+// Each frame returns:
+//   { index, role, cells: boolean[10], dotCount }
+// where dotCount = cells.filter(Boolean).length (kept for convenience).
 
-export function buildFrames(minuend) {
+const FRAME_SIZE = 10;
+
+function makeCells(filledCount) {
+  return Array.from({ length: FRAME_SIZE }, (_, i) => i < filledCount);
+}
+
+function countCells(cells) {
+  return cells.reduce((n, b) => n + (b ? 1 : 0), 0);
+}
+
+export function buildFrames(total) {
   const frames = [];
-  let remaining = minuend;
+  let remaining = total;
   let i = 0;
   while (remaining > 0) {
-    const dotCount = Math.min(10, remaining);
-    frames.push({ index: i, dotCount, role: 'empty' });
-    remaining -= dotCount;
+    const filled = Math.min(FRAME_SIZE, remaining);
+    frames.push({
+      index: i,
+      role: 'empty',
+      cells: makeCells(filled),
+      dotCount: filled,
+    });
+    remaining -= filled;
     i += 1;
   }
   if (frames.length === 0) {
-    frames.push({ index: 0, dotCount: 0, role: 'empty' });
+    frames.push({ index: 0, role: 'empty', cells: makeCells(0), dotCount: 0 });
   }
   return frames;
 }
 
-// classifyAddInitial: for addition. Builds frames sized for the SUM (a+b)
-// but only the first `a` cells are filled. Roles are assigned by the final
-// state so the active frames are the ones the addend will land in.
-//
-// Returns frames: [{ index, dotCount, role, finalDotCount }]
+// classifyAddInitial: addition mode. Frames are sized to the SUM (a+b),
+// but only the first `a` cells are filled in `cells`. `finalCells` mirrors
+// the final state (a+b). Role assignment is based on the FINAL state so
+// the active frames are where the addend will land.
 export function classifyAddInitial(a, b) {
   const sum = a + b;
-  // Classify by final state to get which frames exist + their final dotCount
   const finalFrames = classifyFrames(sum, b > 0 ? Math.min(b, sum) : 0);
   let toFill = a;
   return finalFrames.map((f) => {
     const filled = Math.min(f.dotCount, toFill);
     toFill -= filled;
     return {
-      ...f,
-      finalDotCount: f.dotCount,
+      index: f.index,
+      role: f.role,
+      cells: makeCells(filled),
+      finalCells: f.cells.slice(),
       dotCount: filled,
     };
   });
@@ -81,18 +71,20 @@ export function classifyFrames(minuend, subtrahend) {
 
   const frames = buildFrames(minuend);
 
-  // Identify rightmost partial frame (dotCount in 1..9) → active-ones
-  // Identify rightmost FULL frame (dotCount === 10) → active-ten
   let activeOnesIdx = -1;
   let activeTenIdx = -1;
 
   for (let i = frames.length - 1; i >= 0; i--) {
-    if (activeOnesIdx === -1 && frames[i].dotCount > 0 && frames[i].dotCount < 10) {
+    if (
+      activeOnesIdx === -1 &&
+      frames[i].dotCount > 0 &&
+      frames[i].dotCount < FRAME_SIZE
+    ) {
       activeOnesIdx = i;
     }
   }
   for (let i = frames.length - 1; i >= 0; i--) {
-    if (frames[i].dotCount === 10) {
+    if (frames[i].dotCount === FRAME_SIZE) {
       activeTenIdx = i;
       break;
     }
@@ -103,7 +95,7 @@ export function classifyFrames(minuend, subtrahend) {
       frames[i].role = 'active-ones';
     } else if (i === activeTenIdx) {
       frames[i].role = 'active-ten';
-    } else if (frames[i].dotCount === 10) {
+    } else if (frames[i].dotCount === FRAME_SIZE) {
       frames[i].role = 'spectator';
     } else {
       frames[i].role = 'empty';
@@ -112,3 +104,5 @@ export function classifyFrames(minuend, subtrahend) {
 
   return frames;
 }
+
+export { FRAME_SIZE, makeCells, countCells };
