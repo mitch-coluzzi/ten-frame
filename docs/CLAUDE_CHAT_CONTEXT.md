@@ -240,6 +240,19 @@ plugins: ['react-native-reanimated/plugin']
 - "Start with" input → green / dark green palette (border, label, background tint).
 - Inputs displayed vertically (Start with → minus sign → Take away) instead of horizontally.
 
+### Session C — v1.2.0 (April 7, 2026)
+**Addition mode added + visual + UX overhaul:**
+- Ten-frames now vertical 5×2 (was horizontal 2×5). Column-major fill order: top-to-bottom column 1, then column 2.
+- Math-style stacked input on Home: right-aligned with the operator sign on the LEFT of the bottom number, divider line below — like the column subtraction layout kids learn in school.
+- Filled dots are GREEN (not coral). Green = ten-frame fill + "Start with" + addition. Red = "Take away" + subtraction. Color carries semantic meaning.
+- +/− toggle radio buttons at top of Home — switches between addition and subtraction mode.
+- Strategy cards rewritten: numerals only, minimal text. Each card shows the equation chain in big numbers. Pre-reader friendly per Lillie's age.
+- NumberBond `/ \` rotation was inverted — fixed.
+- Play Again button on Result now returns to Home (popToTop) instead of replaying the same problem.
+- Addition strategies: DIRECT (no ten crossing) and MAKE_A_TEN (split addend into "fill the ten" + "overflow into next frame").
+- Addition implementation: `classifyAddInitial(a, b)` builds frames sized for the sum but with only `a` cells initially filled. SolveScreen taps fill empty cells (mode='add') instead of removing filled ones (mode='remove').
+- All routing functions (problemLadder, strategyEngine) take an `operation` parameter — `OPERATIONS.SUBTRACT` or `OPERATIONS.ADD`.
+
 ### Web + Mobile Parity (added v1.0.1)
 - Spec is React Native / Expo, but Mitch wants the same product accessible via web AND phone, both updated in parallel from a single codebase.
 - Expo Web (react-native-web + @expo/metro-runtime) chosen — same source tree, same components, exports a static bundle for web.

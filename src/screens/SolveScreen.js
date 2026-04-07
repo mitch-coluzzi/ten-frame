@@ -1,8 +1,8 @@
 // SolveScreen.js
-// Guided step-by-step interaction. Child taps dots in the target frame
-// until the step's removeCount is satisfied, then advances.
-//
-// On final step, navigates to ResultScreen.
+// Guided steps for both subtraction and addition.
+//   - Subtract: tap rightmost-filled cell in target frame to remove
+//   - Add:      tap leftmost-empty cell in target frame to fill
+// Auto-advances when step's actionCount is hit.
 
 import React, { useState, useMemo, useEffect } from 'react';
 import {
@@ -16,37 +16,34 @@ import {
 } from 'react-native';
 import TenFrame from '../components/TenFrame';
 import NumberBond from '../components/NumberBond';
-import { classifyFrames } from '../logic/frameClassifier';
-import { buildSteps } from '../logic/strategyEngine';
+import { classifyFrames, classifyAddInitial } from '../logic/frameClassifier';
+import { buildSteps, OPERATIONS } from '../logic/strategyEngine';
 import { theme } from '../constants/theme';
 
 export default function SolveScreen({ route, navigation }) {
-  const { minuend, subtrahend, strategy } = route.params;
+  const { operation, a, b, strategy } = route.params;
+  const isAdd = operation === OPERATIONS.ADD;
 
-  // Frozen role classification — roles are assigned ONCE at the start
-  // and don't change during the solve. dotCount per frame mutates as
-  // the child removes dots.
-  const initialFrames = useMemo(
-    () => classifyFrames(minuend, subtrahend),
-    [minuend, subtrahend]
-  );
+  // Initial frame state — frozen role classification
+  const initialFrames = useMemo(() => {
+    if (isAdd) return classifyAddInitial(a, b);
+    return classifyFrames(a, b);
+  }, [isAdd, a, b]);
 
   const steps = useMemo(
-    () => buildSteps(strategy, minuend, subtrahend),
-    [strategy, minuend, subtrahend]
+    () => buildSteps(operation, strategy, a, b),
+    [operation, strategy, a, b]
   );
 
-  // Frame state: array of { index, dotCount, role } — dotCount mutates
   const [frames, setFrames] = useState(() =>
     initialFrames.map((f) => ({ ...f }))
   );
   const [stepIndex, setStepIndex] = useState(0);
-  const [removedThisStep, setRemovedThisStep] = useState(0);
+  const [actionCountThisStep, setActionCountThisStep] = useState(0);
 
   const currentStep = steps[stepIndex];
   const isLastStep = stepIndex === steps.length - 1;
 
-  // Pulse animation for the instruction card on step change
   const pulseAnim = useMemo(() => new Animated.Value(0), []);
   useEffect(() => {
     pulseAnim.setValue(0);
@@ -57,23 +54,50 @@ export default function SolveScreen({ route, navigation }) {
     }).start();
   }, [stepIndex, pulseAnim]);
 
+  // Resolve which frame is the target for the current step.
+  // For 'next-frame' (addition overflow), it's the frame after the last
+  // currently-non-empty frame whose finalDotCount > current dotCount.
+  const targetFrameIndex = useMemo(() => {
+    if (!currentStep.target) return -1;
+    if (currentStep.target === 'next-frame') {
+      // Find first frame whose finalDotCount > current dotCount
+      for (let i = 0; i < frames.length; i++) {
+        const f = frames[i];
+        if ((f.finalDotCount ?? f.dotCount) > f.dotCount && f.role !== 'active-ones' && f.dotCount === 0) {
+          return i;
+        }
+      }
+      // Fallback: any frame with dotCount === 0 and finalDotCount > 0
+      for (let i = 0; i < frames.length; i++) {
+        if (frames[i].dotCount === 0 && (frames[i].finalDotCount ?? 0) > 0) return i;
+      }
+      return -1;
+    }
+    // 'active-ten' or 'active-ones' — match by role
+    return frames.findIndex((f) => f.role === currentStep.target);
+  }, [currentStep, frames]);
+
   const handleCellPress = (frameIdx) => {
-    if (!currentStep.target) return;
-    const targetRole = currentStep.target;
+    if (frameIdx !== targetFrameIndex) return;
+    if (!currentStep.action) return;
 
     setFrames((prev) => {
       const next = prev.map((f) => ({ ...f }));
-      const target = next[frameIdx];
-      if (!target || target.role !== targetRole) return prev;
-      if (target.dotCount <= 0) return prev;
-      target.dotCount -= 1;
+      const tgt = next[frameIdx];
+      if (currentStep.action === 'remove') {
+        if (tgt.dotCount <= 0) return prev;
+        tgt.dotCount -= 1;
+      } else if (currentStep.action === 'add') {
+        const cap = tgt.finalDotCount ?? 10;
+        if (tgt.dotCount >= cap) return prev;
+        tgt.dotCount += 1;
+      }
       return next;
     });
 
-    setRemovedThisStep((n) => {
+    setActionCountThisStep((n) => {
       const updated = n + 1;
-      if (updated >= currentStep.removeCount) {
-        // Auto-advance after a brief beat
+      if (updated >= currentStep.actionCount) {
         setTimeout(() => advanceStep(), 350);
       }
       return updated;
@@ -82,44 +106,39 @@ export default function SolveScreen({ route, navigation }) {
 
   const advanceStep = () => {
     if (stepIndex >= steps.length - 1) {
-      // Last step → ResultScreen
-      navigation.replace('Result', { minuend, subtrahend, strategy });
+      navigation.replace('Result', { operation, a, b, strategy });
       return;
     }
     setStepIndex((i) => i + 1);
-    setRemovedThisStep(0);
+    setActionCountThisStep(0);
   };
 
-  // For non-interactive steps (showBond, isFinal), provide a Continue button
   const showContinueBtn =
-    currentStep.target == null && currentStep.removeCount === 0;
+    currentStep.target == null && (currentStep.actionCount ?? 0) === 0;
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.problem}>
-          {minuend} − {subtrahend}
+          {a} {isAdd ? '+' : '−'} {b}
         </Text>
 
         <View style={styles.framesWrap}>
-          {frames.map((f) => (
+          {frames.map((f, idx) => (
             <TenFrame
               key={f.index}
               dotCount={f.dotCount}
               role={f.role}
-              interactive={
-                currentStep.target != null && f.role === currentStep.target
-              }
-              isTarget={
-                currentStep.target != null && f.role === currentStep.target
-              }
-              onCellPress={() => handleCellPress(f.index)}
+              interactive={idx === targetFrameIndex}
+              isTarget={idx === targetFrameIndex}
+              mode={currentStep.action === 'add' ? 'add' : 'remove'}
+              onCellPress={() => handleCellPress(idx)}
             />
           ))}
         </View>
 
         {currentStep.showBond && (
-          <NumberBond whole={subtrahend} parts={currentStep.bondParts} />
+          <NumberBond whole={currentStep.bondWhole} parts={currentStep.bondParts} />
         )}
 
         <Animated.View
@@ -138,10 +157,10 @@ export default function SolveScreen({ route, navigation }) {
             },
           ]}
         >
-          <Text style={styles.instructionText}>{currentStep.instruction}</Text>
-          {currentStep.removeCount > 0 && (
+          <Text style={styles.instructionText}>{currentStep.numericLine}</Text>
+          {currentStep.actionCount > 0 && (
             <Text style={styles.progress}>
-              {removedThisStep} / {currentStep.removeCount}
+              {actionCountThisStep} / {currentStep.actionCount}
             </Text>
           )}
         </Animated.View>
@@ -155,7 +174,7 @@ export default function SolveScreen({ route, navigation }) {
             onPress={advanceStep}
           >
             <Text style={styles.continueBtnText}>
-              {isLastStep ? 'See the answer' : 'Continue'}
+              {isLastStep ? 'See answer' : 'Next'}
             </Text>
           </Pressable>
         )}
@@ -172,8 +191,8 @@ const styles = StyleSheet.create({
     paddingBottom: theme.spacing.xl * 2,
   },
   problem: {
-    fontSize: 44,
-    fontWeight: '800',
+    fontSize: 56,
+    fontWeight: '900',
     color: theme.colors.ink,
     marginBottom: theme.spacing.md,
   },
@@ -195,17 +214,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   instructionText: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 36,
+    fontWeight: '900',
     color: theme.colors.ink,
     textAlign: 'center',
-    lineHeight: 30,
   },
   progress: {
     marginTop: theme.spacing.sm,
-    fontSize: theme.fontSizes.body,
+    fontSize: 24,
     color: theme.colors.inkSoft,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   continueBtn: {
     backgroundColor: theme.colors.accent,

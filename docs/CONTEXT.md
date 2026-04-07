@@ -1,7 +1,7 @@
 # Ten Frame Math — Claude Code Session Context
 
 > **Read this first, every session. ~2 minute load.**
-> Last updated: v1.1.0 · Session B · April 7, 2026
+> Last updated: v1.2.0 · Session C · April 7, 2026
 > For: Lillie (age 6) · Owner: Mitch Coluzzi
 
 ---
@@ -134,6 +134,7 @@ Example — `34 − 5`:
 | 2026-04-07 | A.1 | 1.0.1 | Web parity added: react-dom, react-native-web, @expo/metro-runtime, serve. `app.json` web config (metro bundler, static output). Scripts: dev/web/build/start. Placeholder PNG assets created. `.gitignore` added. JessieProject local folder deleted. Railway auto-deploy via Nixpacks (install → build → start). |
 | 2026-04-07 | A.2 | 1.0.2 | Railway build fixes: replaced 1×1 PNGs with valid sized assets (1024 icon, 1284×2778 splash, 48 favicon); switched web `output` from `static` to `single` (SPA, no expo-router required). |
 | 2026-04-07 | B | 1.1.0 | **Full app build.** problemLadder + strategyEngine logic. NumberBond component. StrategySelectScreen, SolveScreen (interactive tap-to-remove with auto-advance), ResultScreen (spring answer reveal + "Did you notice?" for tier 3+). All 4 screens registered in App.js. HomeScreen rewritten: vertical input column, green "Start with" palette, navigation wired (DIRECT for tier 1, otherwise StrategySelect). Spectator frames now full color (opacity 1.0) per user feedback. DotGrid + TenFrame extended with interactive/onCellPress/isTarget. Animation: react-native Animated API for instruction pulse + answer spring. |
+| 2026-04-07 | C | 1.2.0 | **Addition mode + UX overhaul.** Vertical 5×2 ten-frame layout (column-major fill). Math-style stacked input on Home (right-aligned, sign on left, divider). Green/red palette (greens for ten-frames + Start With + addition; reds for Take Away + subtraction). +/− toggle (radio buttons) on Home. Strategy cards rewritten — numerals only, minimal text, color-coded. NumberBond rotation fixed (was inverted). SolveScreen handles both ops with `mode='add'\|'remove'` on DotGrid; addition uses `classifyAddInitial(a,b)` so frames pre-size to a+b and the user fills empty cells. strategyEngine adds OPERATIONS enum + buildAddSteps (DIRECT, MAKE_A_TEN). problemLadder + needsStrategyChoice + shouldShowPattern signatures take operation. Play Again returns to Home (popToTop). Tier 1 add/sub still skips strategy picker. |
 
 ---
 

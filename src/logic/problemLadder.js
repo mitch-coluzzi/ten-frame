@@ -1,36 +1,47 @@
 // problemLadder.js
-// Returns difficulty tier 1–5 for any subtraction problem.
-//
-// Tier 1: single frame, no ten crossing (e.g. 9 − 4)
-// Tier 2: crosses ten, one ten in play (e.g. 13 − 5)
-// Tier 3: crosses ten, two spectator frames possible (e.g. 23 − 5)
-// Tier 4: crosses ten, multiple spectator frames (e.g. 33 − 5)
-// Tier 5: harder decomposition — large minuend AND larger ones removal (e.g. 34 − 7)
+// Tier 1–5 difficulty + strategy choice helpers, for both subtraction and addition.
 
-export function getTier(minuend, subtrahend) {
-  if (minuend < 1 || subtrahend < 1 || subtrahend > minuend) return 1;
+import { OPERATIONS } from './strategyEngine';
 
-  const ones = minuend % 10;
-  const tens = Math.floor(minuend / 10);
-  const crossesTen = subtrahend > ones;
+export function getTier(operation, a, b) {
+  if (a < 1 || b < 1) return 1;
+  if (operation === OPERATIONS.SUBTRACT && b > a) return 1;
 
-  if (!crossesTen && tens === 0) return 1;
-  if (crossesTen && tens === 1) return 2;
-  if (crossesTen && tens === 2) return 3;
-  if (crossesTen && tens === 3 && ones < 4) return 4;
-  if (crossesTen && tens >= 3) return 5;
-  return 1;
+  if (operation === OPERATIONS.SUBTRACT) {
+    const ones = a % 10;
+    const tens = Math.floor(a / 10);
+    const crossesTen = b > ones;
+    if (!crossesTen && tens === 0) return 1;
+    if (crossesTen && tens === 1) return 2;
+    if (crossesTen && tens === 2) return 3;
+    if (crossesTen && tens === 3 && ones < 4) return 4;
+    if (crossesTen && tens >= 3) return 5;
+    return 1;
+  }
+
+  // Addition
+  const ones = a % 10;
+  const open = ones === 0 ? 10 : 10 - ones;
+  const crossesTen = b > open && (a + b) > 10;
+  const sumTens = Math.floor((a + b) / 10);
+  if (!crossesTen) return 1;
+  if (crossesTen && sumTens <= 1) return 2;
+  if (crossesTen && sumTens === 2) return 3;
+  if (crossesTen && sumTens === 3) return 4;
+  return 5;
 }
 
-// Strategy choice: tier 1 problems don't need a strategy choice
-// (no ten crossing — just remove from the partial frame).
-export function needsStrategyChoice(minuend, subtrahend) {
-  const ones = minuend % 10;
-  return subtrahend > ones && minuend >= 10;
+export function needsStrategyChoice(operation, a, b) {
+  if (operation === OPERATIONS.SUBTRACT) {
+    const ones = a % 10;
+    return b > ones && a >= 10;
+  }
+  // Addition: only ask when crossing a ten
+  const ones = a % 10;
+  const open = ones === 0 ? 10 : 10 - ones;
+  return b > open && (a + b) > 10;
 }
 
-// "Did you notice?" prompt only fires for tier 3+ (where the same
-// math fact repeats across spectator frames).
-export function shouldShowPattern(minuend, subtrahend) {
-  return getTier(minuend, subtrahend) >= 3;
+export function shouldShowPattern(operation, a, b) {
+  return getTier(operation, a, b) >= 3;
 }

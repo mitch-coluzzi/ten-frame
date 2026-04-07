@@ -7,7 +7,14 @@ import { View, StyleSheet } from 'react-native';
 import DotGrid from './DotGrid';
 import { theme } from '../constants/theme';
 
-export default function TenFrame({ dotCount, role, interactive, onCellPress, isTarget }) {
+export default function TenFrame({
+  dotCount,
+  role,
+  interactive,
+  onCellPress,
+  isTarget,
+  mode = 'remove',
+}) {
   const isSpectator = role === 'spectator';
   return (
     <View
@@ -22,6 +29,7 @@ export default function TenFrame({ dotCount, role, interactive, onCellPress, isT
         role={role}
         interactive={interactive}
         onCellPress={onCellPress}
+        mode={mode}
       />
     </View>
   );

@@ -45,6 +45,27 @@ export function buildFrames(minuend) {
   return frames;
 }
 
+// classifyAddInitial: for addition. Builds frames sized for the SUM (a+b)
+// but only the first `a` cells are filled. Roles are assigned by the final
+// state so the active frames are the ones the addend will land in.
+//
+// Returns frames: [{ index, dotCount, role, finalDotCount }]
+export function classifyAddInitial(a, b) {
+  const sum = a + b;
+  // Classify by final state to get which frames exist + their final dotCount
+  const finalFrames = classifyFrames(sum, b > 0 ? Math.min(b, sum) : 0);
+  let toFill = a;
+  return finalFrames.map((f) => {
+    const filled = Math.min(f.dotCount, toFill);
+    toFill -= filled;
+    return {
+      ...f,
+      finalDotCount: f.dotCount,
+      dotCount: filled,
+    };
+  });
+}
+
 export function classifyFrames(minuend, subtrahend) {
   if (
     typeof minuend !== 'number' ||

@@ -1,6 +1,5 @@
 // ResultScreen.js
-// Big answer reveal + optional "Did you notice?" pattern prompt for tier 3+.
-// Play Again returns to Home, New Problem clears inputs.
+// Big answer reveal. Play Again → Home.
 
 import React, { useEffect, useMemo } from 'react';
 import {
@@ -13,12 +12,14 @@ import {
 } from 'react-native';
 import { theme } from '../constants/theme';
 import { shouldShowPattern, getTier } from '../logic/problemLadder';
+import { OPERATIONS } from '../logic/strategyEngine';
 
 export default function ResultScreen({ route, navigation }) {
-  const { minuend, subtrahend, strategy } = route.params;
-  const answer = minuend - subtrahend;
-  const tier = getTier(minuend, subtrahend);
-  const showPattern = shouldShowPattern(minuend, subtrahend);
+  const { operation, a, b } = route.params;
+  const isAdd = operation === OPERATIONS.ADD;
+  const answer = isAdd ? a + b : a - b;
+  const tier = getTier(operation, a, b);
+  const showPattern = shouldShowPattern(operation, a, b);
 
   const scaleAnim = useMemo(() => new Animated.Value(0.4), []);
   useEffect(() => {
@@ -30,16 +31,15 @@ export default function ResultScreen({ route, navigation }) {
     }).start();
   }, [scaleAnim]);
 
-  // Equivalence hint: e.g. for 23-5 the same fact 13-5 hides inside.
-  const onesPlusTen = (minuend % 10) + 10;
-  const equivalentMinuend = onesPlusTen;
-  const equivalentSubtrahend = subtrahend;
+  const ones = a % 10;
+  const equivalentA = ones + 10;
+  const equivalentAns = isAdd ? equivalentA + b : equivalentA - b;
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         <Text style={styles.equation}>
-          {minuend} − {subtrahend} =
+          {a} {isAdd ? '+' : '−'} {b} =
         </Text>
         <Animated.Text
           style={[styles.answer, { transform: [{ scale: scaleAnim }] }]}
@@ -51,35 +51,17 @@ export default function ResultScreen({ route, navigation }) {
           <View style={styles.patternCard}>
             <Text style={styles.patternTitle}>Did you notice?</Text>
             <Text style={styles.patternBody}>
-              {equivalentMinuend} − {equivalentSubtrahend} ={' '}
-              {equivalentMinuend - equivalentSubtrahend} hides inside this
-              problem. The ones place does the same work every time!
+              {equivalentA} {isAdd ? '+' : '−'} {b} = {equivalentAns}
             </Text>
           </View>
         )}
 
-        <View style={styles.btnRow}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.btn,
-              styles.btnSecondary,
-              pressed && { opacity: 0.85 },
-            ]}
-            onPress={() => navigation.popToTop()}
-          >
-            <Text style={[styles.btnText, styles.btnTextSecondary]}>
-              New Problem
-            </Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [styles.btn, pressed && { opacity: 0.85 }]}
-            onPress={() =>
-              navigation.replace('Solve', { minuend, subtrahend, strategy })
-            }
-          >
-            <Text style={styles.btnText}>Play Again</Text>
-          </Pressable>
-        </View>
+        <Pressable
+          style={({ pressed }) => [styles.btn, pressed && { opacity: 0.85 }]}
+          onPress={() => navigation.popToTop()}
+        >
+          <Text style={styles.btnText}>Play Again</Text>
+        </Pressable>
 
         <Text style={styles.tierBadge}>Tier {tier}</Text>
       </View>
@@ -96,13 +78,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   equation: {
-    fontSize: 48,
-    fontWeight: '800',
+    fontSize: 56,
+    fontWeight: '900',
     color: theme.colors.ink,
     marginBottom: theme.spacing.sm,
   },
   answer: {
-    fontSize: 160,
+    fontSize: 180,
     fontWeight: '900',
     color: theme.colors.dotFilled,
     marginBottom: theme.spacing.lg,
@@ -114,8 +96,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: theme.spacing.lg,
     marginBottom: theme.spacing.lg,
-    width: '100%',
-    maxWidth: 480,
+    alignItems: 'center',
   },
   patternTitle: {
     fontSize: 22,
@@ -124,32 +105,20 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.sm,
   },
   patternBody: {
-    fontSize: theme.fontSizes.body,
+    fontSize: 32,
+    fontWeight: '900',
     color: theme.colors.ink,
-    lineHeight: 24,
-  },
-  btnRow: {
-    flexDirection: 'row',
-    gap: theme.spacing.md,
   },
   btn: {
     backgroundColor: theme.colors.accent,
     paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.xl * 1.5,
     borderRadius: 16,
-  },
-  btnSecondary: {
-    backgroundColor: theme.colors.frameBg,
-    borderWidth: 3,
-    borderColor: theme.colors.frameBorder,
   },
   btnText: {
     color: '#fff',
     fontSize: theme.fontSizes.title,
     fontWeight: '800',
-  },
-  btnTextSecondary: {
-    color: theme.colors.ink,
   },
   tierBadge: {
     marginTop: theme.spacing.lg,

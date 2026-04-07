@@ -68,11 +68,11 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.frameBorder,
   },
   lineLeft: {
-    transform: [{ rotate: '-30deg' }],
+    transform: [{ rotate: '30deg' }],
     marginLeft: 28,
   },
   lineRight: {
-    transform: [{ rotate: '30deg' }],
+    transform: [{ rotate: '-30deg' }],
     marginRight: 28,
   },
   partsRow: {

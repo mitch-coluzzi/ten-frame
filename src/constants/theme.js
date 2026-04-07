@@ -9,15 +9,21 @@ export const theme = {
     frameBorder: '#a8632c',    // warm wood-tone border
 
     // Dot states
-    dotFilled: '#e0563a',      // warm coral-red — active filled
-    dotEmpty: '#fdf2e2',       // warm cream — empty slot fill
-    dotEmptyBorder: '#cdaa7e', // tan border for empty slot
-    dotSpectator: '#e0563a',   // full color (no dimming) per user pref
-    dotRemoving: '#f5b042',    // amber flash mid-animation
+    dotFilled: '#4caf50',      // green — full ten-frames
+    dotEmpty: '#f4f9f4',       // very pale green — empty slot fill
+    dotEmptyBorder: '#a8c8a8', // soft green border for empty slot
+    dotSpectator: '#4caf50',   // full color, identical to filled
+    dotRemoving: '#e53935',    // red flash mid-animation (matches Take Away)
 
-    // Green palette for "Start with" input
+    // Green palette — "Start with" / ten frames
     green: '#4caf50',
     greenDark: '#2e7d32',
+    greenBg: '#eaf7eb',
+
+    // Red palette — "Take away" / removal
+    red: '#e53935',
+    redDark: '#b71c1c',
+    redBg: '#fdecea',
 
     // Text / UI
     ink: '#3a2418',            // very dark brown — text

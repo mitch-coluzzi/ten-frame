@@ -1,54 +1,75 @@
 // StrategySelectScreen.js
-// Two-choice strategy picker for problems that cross a ten.
-// Tier 1 problems skip this screen entirely (HomeScreen routes direct to Solve).
+// Two strategy cards, numerals first, minimal text. Pre-reader friendly.
 
 import React from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  SafeAreaView,
-} from 'react-native';
+import { View, Text, Pressable, StyleSheet, SafeAreaView } from 'react-native';
 import { theme } from '../constants/theme';
-import { STRATEGIES } from '../logic/strategyEngine';
+import { OPERATIONS, STRATEGIES } from '../logic/strategyEngine';
 
 export default function StrategySelectScreen({ route, navigation }) {
-  const { minuend, subtrahend } = route.params;
-  const ones = minuend % 10;
+  const { operation, a, b } = route.params;
+  const ones = a % 10;
+  const isSub = operation === OPERATIONS.SUBTRACT;
 
   const choose = (strategy) => {
-    navigation.navigate('Solve', { minuend, subtrahend, strategy });
+    navigation.navigate('Solve', { operation, a, b, strategy });
   };
+
+  // Numeric chains rendered as big-number lines
+  let cardA, cardB;
+  if (isSub) {
+    // Sub: take from ten / break apart
+    const remTen = 10 - b;
+    const second = b - ones;
+    cardA = {
+      strategy: STRATEGIES.TAKE_FROM_TEN,
+      lines: [`10 − ${b} = ${remTen}`, `${remTen} + ${ones} = ${remTen + ones}`],
+    };
+    cardB = {
+      strategy: STRATEGIES.BREAK_APART,
+      lines: [`${b} = ${ones} + ${second}`, `${ones} − ${ones} = 0`, `10 − ${second} = ${10 - second}`],
+    };
+  } else {
+    // Add: make a ten / direct
+    const open = ones === 0 ? 10 : 10 - ones;
+    const overflow = b - open;
+    cardA = {
+      strategy: STRATEGIES.MAKE_A_TEN,
+      lines: [`${b} = ${open} + ${overflow}`, `${a} + ${open} = ${a + open}`, `${a + open} + ${overflow} = ${a + b}`],
+    };
+    cardB = null; // addition only offers Make-a-Ten when crossing
+  }
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         <Text style={styles.problem}>
-          {minuend} − {subtrahend} = ?
+          {a} {isSub ? '−' : '+'} {b}
         </Text>
-        <Text style={styles.prompt}>Pick how you want to solve it.</Text>
 
         <Pressable
           style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-          onPress={() => choose(STRATEGIES.TAKE_FROM_TEN)}
+          onPress={() => choose(cardA.strategy)}
         >
-          <Text style={styles.cardTitle}>Take from the ten</Text>
-          <Text style={styles.cardBody}>
-            Take {subtrahend} away from the full ten frame, then add what's left.
-          </Text>
+          {cardA.lines.map((line, i) => (
+            <Text key={i} style={styles.cardLine}>
+              {line}
+            </Text>
+          ))}
         </Pressable>
 
-        <Pressable
-          style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-          onPress={() => choose(STRATEGIES.BREAK_APART)}
-        >
-          <Text style={styles.cardTitle}>Break the {subtrahend} apart</Text>
-          <Text style={styles.cardBody}>
-            Split {subtrahend} into {ones} and {subtrahend - ones}. Take {ones}{' '}
-            from the ones first, then {subtrahend - ones} from the ten.
-          </Text>
-        </Pressable>
+        {cardB && (
+          <Pressable
+            style={({ pressed }) => [styles.card, styles.cardAlt, pressed && styles.cardPressed]}
+            onPress={() => choose(cardB.strategy)}
+          >
+            {cardB.lines.map((line, i) => (
+              <Text key={i} style={[styles.cardLine, styles.cardLineAlt]}>
+                {line}
+              </Text>
+            ))}
+          </Pressable>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -62,39 +83,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   problem: {
-    fontSize: 56,
-    fontWeight: '800',
+    fontSize: 64,
+    fontWeight: '900',
     color: theme.colors.ink,
     marginVertical: theme.spacing.lg,
-  },
-  prompt: {
-    fontSize: theme.fontSizes.body,
-    color: theme.colors.inkSoft,
-    marginBottom: theme.spacing.lg,
   },
   card: {
     width: '100%',
     maxWidth: 480,
-    backgroundColor: theme.colors.frameBg,
-    borderColor: theme.colors.frameBorder,
+    backgroundColor: theme.colors.greenBg,
+    borderColor: theme.colors.greenDark,
     borderWidth: 4,
     borderRadius: 20,
     padding: theme.spacing.lg,
     marginBottom: theme.spacing.md,
+    alignItems: 'center',
   },
-  cardPressed: {
-    backgroundColor: theme.colors.dotEmpty,
-    transform: [{ scale: 0.98 }],
+  cardAlt: {
+    backgroundColor: theme.colors.redBg,
+    borderColor: theme.colors.redDark,
   },
-  cardTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: theme.colors.accent,
-    marginBottom: theme.spacing.sm,
+  cardPressed: { transform: [{ scale: 0.97 }], opacity: 0.85 },
+  cardLine: {
+    fontSize: 36,
+    fontWeight: '900',
+    color: theme.colors.greenDark,
+    marginVertical: 4,
   },
-  cardBody: {
-    fontSize: theme.fontSizes.body,
-    color: theme.colors.ink,
-    lineHeight: 24,
-  },
+  cardLineAlt: { color: theme.colors.redDark },
 });

@@ -1,7 +1,6 @@
 // HomeScreen.js
-// Number entry + live ten-frame preview.
-// Solve navigates to StrategySelectScreen (or directly to SolveScreen
-// if the problem doesn't cross a ten — single strategy "direct").
+// Operation toggle (+/-), math-style stacked input, live ten-frame preview,
+// Solve routes to StrategySelect or directly to Solve depending on tier/op.
 
 import React, { useState, useMemo } from 'react';
 import {
@@ -14,13 +13,12 @@ import {
   SafeAreaView,
 } from 'react-native';
 import TenFrame from '../components/TenFrame';
-import { classifyFrames, buildFrames } from '../logic/frameClassifier';
+import { classifyFrames, buildFrames, classifyAddInitial } from '../logic/frameClassifier';
 import { needsStrategyChoice } from '../logic/problemLadder';
-import { STRATEGIES } from '../logic/strategyEngine';
+import { OPERATIONS, STRATEGIES } from '../logic/strategyEngine';
 import { theme } from '../constants/theme';
 
-const MIN_MIN = 1;
-const MAX_MIN = 40;
+const MAX = 40;
 
 function clampInt(raw, min, max) {
   const n = parseInt(raw, 10);
@@ -31,76 +29,122 @@ function clampInt(raw, min, max) {
 }
 
 export default function HomeScreen({ navigation }) {
-  const [minuendText, setMinuendText] = useState('14');
-  const [subtrahendText, setSubtrahendText] = useState('5');
+  const [operation, setOperation] = useState(OPERATIONS.SUBTRACT);
+  const [aText, setAText] = useState('14');
+  const [bText, setBText] = useState('5');
 
-  const minuend = clampInt(minuendText, 0, MAX_MIN);
-  const subRaw = clampInt(subtrahendText, 0, MAX_MIN);
-  const subtrahend =
-    subRaw === null || minuend === null ? null : Math.min(subRaw, minuend);
+  const a = clampInt(aText, 0, MAX);
+  const bRaw = clampInt(bText, 0, MAX);
+
+  // For subtraction, b can't exceed a. For addition, a+b can't exceed MAX.
+  const b = useMemo(() => {
+    if (a === null || bRaw === null) return null;
+    if (operation === OPERATIONS.SUBTRACT) return Math.min(bRaw, a);
+    return Math.min(bRaw, MAX - a);
+  }, [a, bRaw, operation]);
 
   const frames = useMemo(() => {
-    if (minuend === null || minuend < MIN_MIN) return buildFrames(0);
-    if (subtrahend === null || subtrahend < 1) return buildFrames(minuend);
-    return classifyFrames(minuend, subtrahend);
-  }, [minuend, subtrahend]);
+    if (a === null || a < 1) return buildFrames(0);
+    if (b === null || b < 1) return buildFrames(a);
+    if (operation === OPERATIONS.SUBTRACT) return classifyFrames(a, b);
+    return classifyAddInitial(a, b);
+  }, [a, b, operation]);
 
   const canSolve =
-    minuend !== null &&
-    minuend >= MIN_MIN &&
-    subtrahend !== null &&
-    subtrahend >= 1 &&
-    subtrahend <= minuend;
+    a !== null && a >= 1 && b !== null && b >= 1 &&
+    (operation === OPERATIONS.SUBTRACT ? b <= a : a + b <= MAX);
 
   const handleSolve = () => {
     if (!canSolve) return;
-    if (needsStrategyChoice(minuend, subtrahend)) {
-      navigation.navigate('StrategySelect', { minuend, subtrahend });
+    if (needsStrategyChoice(operation, a, b)) {
+      navigation.navigate('StrategySelect', { operation, a, b });
     } else {
-      navigation.navigate('Solve', {
-        minuend,
-        subtrahend,
-        strategy: STRATEGIES.DIRECT,
-      });
+      const strategy =
+        operation === OPERATIONS.SUBTRACT
+          ? STRATEGIES.SUB_DIRECT
+          : STRATEGIES.ADD_DIRECT;
+      navigation.navigate('Solve', { operation, a, b, strategy });
     }
   };
+
+  const opSymbol = operation === OPERATIONS.SUBTRACT ? '−' : '+';
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.title}>Let's subtract!</Text>
+        {/* Operation toggle */}
+        <View style={styles.opToggle}>
+          <Pressable
+            style={[
+              styles.opBtn,
+              operation === OPERATIONS.ADD && styles.opBtnAddActive,
+            ]}
+            onPress={() => setOperation(OPERATIONS.ADD)}
+          >
+            <Text
+              style={[
+                styles.opBtnText,
+                operation === OPERATIONS.ADD && styles.opBtnTextActive,
+              ]}
+            >
+              +
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[
+              styles.opBtn,
+              operation === OPERATIONS.SUBTRACT && styles.opBtnSubActive,
+            ]}
+            onPress={() => setOperation(OPERATIONS.SUBTRACT)}
+          >
+            <Text
+              style={[
+                styles.opBtnText,
+                operation === OPERATIONS.SUBTRACT && styles.opBtnTextActive,
+              ]}
+            >
+              −
+            </Text>
+          </Pressable>
+        </View>
 
+        {/* Frames row */}
         <View style={styles.framesWrap}>
           {frames.map((f) => (
             <TenFrame key={f.index} dotCount={f.dotCount} role={f.role} />
           ))}
         </View>
 
-        {/* Vertical input stack */}
-        <View style={styles.inputColumn}>
-          <View style={styles.inputBlock}>
-            <Text style={[styles.label, styles.labelStart]}>Start with</Text>
+        {/* Math-style stacked input */}
+        <View style={styles.mathStack}>
+          <View style={styles.mathRow}>
+            <View style={styles.signSlot} />
             <TextInput
               style={[styles.input, styles.inputStart]}
-              value={minuendText}
-              onChangeText={setMinuendText}
+              value={aText}
+              onChangeText={setAText}
               keyboardType="number-pad"
               maxLength={2}
             />
           </View>
-
-          <Text style={styles.minus}>−</Text>
-
-          <View style={styles.inputBlock}>
-            <Text style={styles.label}>Take away</Text>
+          <View style={styles.mathRow}>
+            <View style={styles.signSlot}>
+              <Text style={styles.signText}>{opSymbol}</Text>
+            </View>
             <TextInput
-              style={styles.input}
-              value={subtrahendText}
-              onChangeText={setSubtrahendText}
+              style={[
+                styles.input,
+                operation === OPERATIONS.SUBTRACT
+                  ? styles.inputSub
+                  : styles.inputAdd,
+              ]}
+              value={bText}
+              onChangeText={setBText}
               keyboardType="number-pad"
               maxLength={2}
             />
           </View>
+          <View style={styles.divider} />
         </View>
 
         <Pressable
@@ -114,16 +158,13 @@ export default function HomeScreen({ navigation }) {
         >
           <Text style={styles.solveBtnText}>Solve</Text>
         </Pressable>
-
-        <Text style={styles.helper}>
-          {canSolve
-            ? `${minuend} − ${subtrahend} = ?`
-            : 'Pick two numbers to start (1–40).'}
-        </Text>
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+const SIGN_W = 60;
+const INPUT_W = 130;
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.appBg },
@@ -131,57 +172,84 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
     alignItems: 'center',
   },
-  title: {
-    fontSize: theme.fontSizes.title,
-    color: theme.colors.ink,
-    fontWeight: '800',
+  opToggle: {
+    flexDirection: 'row',
     marginBottom: theme.spacing.lg,
+    borderRadius: 18,
+    overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: theme.colors.frameBorder,
   },
+  opBtn: {
+    width: 80,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.frameBg,
+  },
+  opBtnAddActive: { backgroundColor: theme.colors.greenDark },
+  opBtnSubActive: { backgroundColor: theme.colors.redDark },
+  opBtnText: {
+    fontSize: 38,
+    fontWeight: '900',
+    color: theme.colors.inkSoft,
+  },
+  opBtnTextActive: { color: '#fff' },
   framesWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
     marginBottom: theme.spacing.lg,
   },
-  inputColumn: {
-    alignItems: 'center',
+  mathStack: {
+    alignItems: 'flex-end',
     marginBottom: theme.spacing.lg,
   },
-  inputBlock: {
+  mathRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: theme.spacing.sm,
+    marginVertical: 4,
   },
-  label: {
-    fontSize: theme.fontSizes.body,
-    color: theme.colors.inkSoft,
-    marginBottom: theme.spacing.xs,
-    fontWeight: '700',
+  signSlot: {
+    width: SIGN_W,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  labelStart: {
-    color: theme.colors.greenDark,
+  signText: {
+    fontSize: 56,
+    fontWeight: '900',
+    color: theme.colors.ink,
   },
   input: {
-    width: 110,
-    height: 80,
+    width: INPUT_W,
+    height: 90,
     borderRadius: 16,
     borderWidth: 4,
-    borderColor: theme.colors.frameBorder,
-    backgroundColor: theme.colors.frameBg,
     textAlign: 'center',
-    fontSize: 44,
-    fontWeight: '800',
-    color: theme.colors.ink,
+    fontSize: 56,
+    fontWeight: '900',
   },
   inputStart: {
     borderColor: theme.colors.greenDark,
-    backgroundColor: '#eaf7eb',
+    backgroundColor: theme.colors.greenBg,
     color: theme.colors.greenDark,
   },
-  minus: {
-    fontSize: 48,
-    fontWeight: '800',
-    color: theme.colors.ink,
-    marginVertical: theme.spacing.xs,
+  inputSub: {
+    borderColor: theme.colors.redDark,
+    backgroundColor: theme.colors.redBg,
+    color: theme.colors.redDark,
+  },
+  inputAdd: {
+    borderColor: theme.colors.greenDark,
+    backgroundColor: theme.colors.greenBg,
+    color: theme.colors.greenDark,
+  },
+  divider: {
+    width: SIGN_W + INPUT_W,
+    height: 5,
+    backgroundColor: theme.colors.ink,
+    borderRadius: 3,
+    marginTop: 6,
   },
   solveBtn: {
     backgroundColor: theme.colors.accent,
@@ -196,9 +264,5 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.title,
     fontWeight: '800',
     letterSpacing: 1,
-  },
-  helper: {
-    fontSize: theme.fontSizes.body,
-    color: theme.colors.inkSoft,
   },
 });
