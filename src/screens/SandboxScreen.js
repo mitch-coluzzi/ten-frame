@@ -62,6 +62,8 @@ export default function SandboxScreen({ navigation }) {
               interactive
               isTarget
               mode="sandbox"
+              bondLabel={countCells(f.cells)}
+              bondColor="green"
               onCellPress={(cellIdx) => handleCellPress(idx, cellIdx)}
             />
           ))}

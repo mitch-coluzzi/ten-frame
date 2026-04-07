@@ -258,6 +258,11 @@ Lillie's tutor (Mitch) clarified the framing: this app's purpose is to **explain
 ### v1.3.1 (April 7, 2026)
 - "Highlight which to tap" — DotGrid renders the next N "should-tap" cells with a pulsing yellow↔orange ring. SolveScreen computes the set per step (last N filled in remove mode, first N empty in add mode) and recomputes after each tap. Guides without forcing — any valid cell still works.
 
+### Session E.3 — v1.4.3 (April 7, 2026): Bond satellites on every screen + Watch stutter fix
+- **Bond satellites everywhere**: every TenFrame on Home, Solve, and Sandbox shows a bond satellite circle below it with the current dot count (green palette). It's a permanent counter — as Lillie removes/adds dots, the satellite updates live.
+- **Strategy bond step still wins**: during a Solve bond step (Break Apart, Make a Ten), the strategy's `bondTargets`/`bondParts` mapping replaces the count satellite for the affected frames, with the strategy color (red for Break Apart, green for Make a Ten).
+- **Watch stutter fix**: the original Show loop had `initialPause + bondHold + breath` stacked = 5+s of dead air on the opening bond step. Refactored to a single hold per non-action step. Action steps now: 700ms read pause → 950ms per-dot → 550ms breath. Bond/final: 2000ms hold. A 350ms settle at loop start prevents the screen from feeling frozen on entry.
+
 ### Session E.2 — v1.4.2 (April 7, 2026): Spatial bond + click fix + input clamping
 - **Spatial bond layout**: bond parts now render as satellite circles directly UNDER the frame they target. For 14−5 Break Apart (5 = 4+1), the "4" circle sits below the active-ones frame (the one with 4 dots) and the "1" circle sits below the active-ten frame. Visual association is now direct: "this number affects this frame." TenFrame extended with `bondLabel` + `bondColor` props. The bond `whole` is shown as small gray text above the framesWrap.
 - strategyEngine: BREAK_APART and MAKE_A_TEN bond steps now include a `bondTargets` array (e.g. `['active-ones', 'active-ten']`) mapping each `bondParts[i]` to a frame role.

@@ -114,18 +114,21 @@ export default function SolveScreen({ route, navigation }) {
       new Promise((resolve) => setTimeout(resolve, ms));
 
     const run = async () => {
+      // Brief startup so the user sees the screen settle before action
+      await wait(350);
+      if (cancelShowRef.current) return;
       for (let si = 0; si < steps.length; si++) {
         if (cancelShowRef.current) return;
         setStepIndex(si);
         setActionCountThisStep(0);
         const step = steps[si];
 
-        await wait(1400); // initial pause to read instruction
-        if (cancelShowRef.current) return;
-
         if (step.action && step.actionCount > 0) {
+          // Action step: short read pause, then animate dots, then breath
+          await wait(700);
+          if (cancelShowRef.current) return;
           for (let n = 0; n < step.actionCount; n++) {
-            await wait(1100); // per-dot pace
+            await wait(950);
             if (cancelShowRef.current) return;
             setFrames((prev) => {
               const tIdx = resolveTargetIdx(prev, step.target);
@@ -139,12 +142,12 @@ export default function SolveScreen({ route, navigation }) {
             });
             setActionCountThisStep((n2) => n2 + 1);
           }
+          await wait(550);
         } else {
-          await wait(2800); // bond / final hold
+          // Bond / final step: single hold, no separate initial wait
+          await wait(2000);
           if (cancelShowRef.current) return;
         }
-
-        await wait(900); // breath between steps
       }
 
       if (cancelShowRef.current) return;
@@ -314,15 +317,19 @@ export default function SolveScreen({ route, navigation }) {
                 ? computeHighlightCells(f.cells, currentStep.action, remaining)
                 : [];
 
-            // Compute bondLabel for this frame during bond step
-            let bondLabel = null;
-            let bondColor = isAdd ? 'green' : 'red';
+            // Bond label per frame:
+            //   - During the special bond step, use bondTargets→bondParts mapping
+            //     (with bond color = strategy color)
+            //   - Otherwise, show the live dot count (green satellite)
+            let bondLabel = countCells(f.cells);
+            let bondColor = 'green';
             if (
               (isShow || isDo) &&
               currentStep.showBond &&
               currentStep.bondTargets &&
               currentStep.bondParts
             ) {
+              bondColor = isAdd ? 'green' : 'red';
               for (let bi = 0; bi < currentStep.bondTargets.length; bi++) {
                 const tgt = currentStep.bondTargets[bi];
                 const matches =

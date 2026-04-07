@@ -17,6 +17,7 @@ import {
   classifyFrames,
   buildFrames,
   classifyAddInitial,
+  countCells,
 } from '../logic/frameClassifier';
 import { needsStrategyChoice } from '../logic/problemLadder';
 import { OPERATIONS, STRATEGIES } from '../logic/strategyEngine';
@@ -137,7 +138,13 @@ export default function HomeScreen({ navigation }) {
         {/* Frame preview */}
         <View style={styles.framesWrap}>
           {frames.map((f) => (
-            <TenFrame key={f.index} cells={f.cells} role={f.role} />
+            <TenFrame
+              key={f.index}
+              cells={f.cells}
+              role={f.role}
+              bondLabel={countCells(f.cells)}
+              bondColor="green"
+            />
           ))}
         </View>
 
