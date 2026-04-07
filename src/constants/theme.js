@@ -12,8 +12,12 @@ export const theme = {
     dotFilled: '#e0563a',      // warm coral-red — active filled
     dotEmpty: '#fdf2e2',       // warm cream — empty slot fill
     dotEmptyBorder: '#cdaa7e', // tan border for empty slot
-    dotSpectator: '#c08a78',   // desaturated coral — spectator filled
+    dotSpectator: '#e0563a',   // full color (no dimming) per user pref
     dotRemoving: '#f5b042',    // amber flash mid-animation
+
+    // Green palette for "Start with" input
+    green: '#4caf50',
+    greenDark: '#2e7d32',
 
     // Text / UI
     ink: '#3a2418',            // very dark brown — text
@@ -24,7 +28,7 @@ export const theme = {
   },
 
   opacity: {
-    spectator: 0.4,
+    spectator: 1.0, // full color per user pref (was 0.4)
     active: 1.0,
   },
 

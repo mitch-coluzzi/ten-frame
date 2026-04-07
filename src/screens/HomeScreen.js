@@ -1,12 +1,7 @@
 // HomeScreen.js
-// Session A scope:
-//   - Numeric input for minuend (1–40)
-//   - Numeric input for subtrahend (1..minuend)
-//   - Live ten-frame display wired to current minuend value
-//   - Solve button (stub — Strategy/Solve screens land in Session B)
-//
-// Frame roles render visually so the classification logic is verifiable
-// at a glance before strategy flows are wired.
+// Number entry + live ten-frame preview.
+// Solve navigates to StrategySelectScreen (or directly to SolveScreen
+// if the problem doesn't cross a ten — single strategy "direct").
 
 import React, { useState, useMemo } from 'react';
 import {
@@ -20,6 +15,8 @@ import {
 } from 'react-native';
 import TenFrame from '../components/TenFrame';
 import { classifyFrames, buildFrames } from '../logic/frameClassifier';
+import { needsStrategyChoice } from '../logic/problemLadder';
+import { STRATEGIES } from '../logic/strategyEngine';
 import { theme } from '../constants/theme';
 
 const MIN_MIN = 1;
@@ -33,16 +30,14 @@ function clampInt(raw, min, max) {
   return n;
 }
 
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }) {
   const [minuendText, setMinuendText] = useState('14');
   const [subtrahendText, setSubtrahendText] = useState('5');
 
   const minuend = clampInt(minuendText, 0, MAX_MIN);
   const subRaw = clampInt(subtrahendText, 0, MAX_MIN);
   const subtrahend =
-    subRaw === null || minuend === null
-      ? null
-      : Math.min(subRaw, minuend);
+    subRaw === null || minuend === null ? null : Math.min(subRaw, minuend);
 
   const frames = useMemo(() => {
     if (minuend === null || minuend < MIN_MIN) return buildFrames(0);
@@ -57,6 +52,19 @@ export default function HomeScreen() {
     subtrahend >= 1 &&
     subtrahend <= minuend;
 
+  const handleSolve = () => {
+    if (!canSolve) return;
+    if (needsStrategyChoice(minuend, subtrahend)) {
+      navigation.navigate('StrategySelect', { minuend, subtrahend });
+    } else {
+      navigation.navigate('Solve', {
+        minuend,
+        subtrahend,
+        strategy: STRATEGIES.DIRECT,
+      });
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -68,18 +76,21 @@ export default function HomeScreen() {
           ))}
         </View>
 
-        <View style={styles.problem}>
+        {/* Vertical input stack */}
+        <View style={styles.inputColumn}>
           <View style={styles.inputBlock}>
-            <Text style={styles.label}>Start with</Text>
+            <Text style={[styles.label, styles.labelStart]}>Start with</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, styles.inputStart]}
               value={minuendText}
               onChangeText={setMinuendText}
               keyboardType="number-pad"
               maxLength={2}
             />
           </View>
+
           <Text style={styles.minus}>−</Text>
+
           <View style={styles.inputBlock}>
             <Text style={styles.label}>Take away</Text>
             <TextInput
@@ -93,11 +104,13 @@ export default function HomeScreen() {
         </View>
 
         <Pressable
-          style={[styles.solveBtn, !canSolve && styles.solveBtnDisabled]}
+          style={({ pressed }) => [
+            styles.solveBtn,
+            !canSolve && styles.solveBtnDisabled,
+            pressed && canSolve && { opacity: 0.85 },
+          ]}
           disabled={!canSolve}
-          onPress={() => {
-            // Session B will navigate → StrategySelectScreen
-          }}
+          onPress={handleSolve}
         >
           <Text style={styles.solveBtnText}>Solve</Text>
         </Pressable>
@@ -130,37 +143,45 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: theme.spacing.lg,
   },
-  problem: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
+  inputColumn: {
+    alignItems: 'center',
     marginBottom: theme.spacing.lg,
   },
   inputBlock: {
     alignItems: 'center',
-    marginHorizontal: theme.spacing.md,
+    marginVertical: theme.spacing.sm,
   },
   label: {
     fontSize: theme.fontSizes.body,
     color: theme.colors.inkSoft,
     marginBottom: theme.spacing.xs,
+    fontWeight: '700',
+  },
+  labelStart: {
+    color: theme.colors.greenDark,
   },
   input: {
-    width: 90,
-    height: 70,
-    borderRadius: 14,
-    borderWidth: 3,
+    width: 110,
+    height: 80,
+    borderRadius: 16,
+    borderWidth: 4,
     borderColor: theme.colors.frameBorder,
     backgroundColor: theme.colors.frameBg,
     textAlign: 'center',
-    fontSize: theme.fontSizes.large,
+    fontSize: 44,
     fontWeight: '800',
     color: theme.colors.ink,
   },
+  inputStart: {
+    borderColor: theme.colors.greenDark,
+    backgroundColor: '#eaf7eb',
+    color: theme.colors.greenDark,
+  },
   minus: {
-    fontSize: theme.fontSizes.large,
+    fontSize: 48,
     fontWeight: '800',
     color: theme.colors.ink,
-    marginBottom: theme.spacing.md,
+    marginVertical: theme.spacing.xs,
   },
   solveBtn: {
     backgroundColor: theme.colors.accent,

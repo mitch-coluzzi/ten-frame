@@ -225,6 +225,20 @@ plugins: ['react-native-reanimated/plugin']
 ### Build Status
 - **Session A — Core Structure: SHIPPED v1.0.0** (April 7, 2026)
   - Expo scaffold, theme.js, frameClassifier.js, DotGrid.js, TenFrame.js, HomeScreen.js with live frame preview wired to inputs.
+- **Session B — Strategy Flows + Animation: SHIPPED v1.1.0** (April 7, 2026)
+  - problemLadder.js (tier 1–5, needsStrategyChoice, shouldShowPattern)
+  - strategyEngine.js (DIRECT / TAKE_FROM_TEN / BREAK_APART step sequencer)
+  - NumberBond.js (Strategy 2 split visual)
+  - StrategySelectScreen.js (two-card picker)
+  - SolveScreen.js (tap-to-remove guided steps, auto-advance, role-frozen frames)
+  - ResultScreen.js (spring answer reveal, "Did you notice?" for tier 3+, Play Again / New Problem)
+  - HomeScreen rewritten: vertical input layout, green Start With palette, navigation wired
+  - Animation: react-native Animated API used (instruction pulse + answer spring). Reanimated 2 plugin still loaded but unused — reserved for a polish pass once core flow is validated.
+
+### User Feedback Folded In (v1.1.0)
+- "Greyed out" spectator frames → switched to full color (opacity 1.0). Spectators are visually identical to active frames now; only the target frame gets a glow ring + interactivity.
+- "Start with" input → green / dark green palette (border, label, background tint).
+- Inputs displayed vertically (Start with → minus sign → Take away) instead of horizontally.
 
 ### Web + Mobile Parity (added v1.0.1)
 - Spec is React Native / Expo, but Mitch wants the same product accessible via web AND phone, both updated in parallel from a single codebase.

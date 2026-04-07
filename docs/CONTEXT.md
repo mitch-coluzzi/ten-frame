@@ -1,7 +1,7 @@
 # Ten Frame Math — Claude Code Session Context
 
 > **Read this first, every session. ~2 minute load.**
-> Last updated: v1.0.0 · Session A · April 7, 2026
+> Last updated: v1.1.0 · Session B · April 7, 2026
 > For: Lillie (age 6) · Owner: Mitch Coluzzi
 
 ---
@@ -110,19 +110,19 @@ Example — `34 − 5`:
 
 | Module | Status | Notes |
 |---|---|---|
-| `theme.js` | ✅ Session A | Colors, sizing, fonts, animation timings |
+| `theme.js` | ✅ A + B | Added green palette, spectator opacity 1.0 (full color) |
 | `frameClassifier.js` | ✅ Session A | Role assignment + buildFrames helper |
-| `DotGrid.js` | ✅ Session A | 2x5 cells, filled/empty/spectator visual states |
-| `TenFrame.js` | ✅ Session A | Bordered card wrapper, spectator opacity |
-| `HomeScreen.js` | ✅ Session A | Number entry, live frame preview, Solve stub |
-| `App.js` | ✅ Session A | Stack navigator, version in header |
-| `problemLadder.js` | ⬜ Session B | Tier 1–5 from minuend/subtrahend |
-| `strategyEngine.js` | ⬜ Session B | Step sequencer for both strategies |
-| `StrategySelectScreen.js` | ⬜ Session B | Two-choice picker |
-| `SolveScreen.js` | ⬜ Session B | Guided step interaction |
-| `ResultScreen.js` | ⬜ Session B | Answer reveal + "Did you notice?" |
-| `NumberBond.js` | ⬜ Session B | Strategy 2 subtrahend split visual |
-| Reanimated layer | ⬜ Session B | Per spec animation table |
+| `DotGrid.js` | ✅ A + B | Added `interactive` + `onCellPress`; rightmost filled is tappable |
+| `TenFrame.js` | ✅ A + B | Added `isTarget` glow ring + interactive passthrough |
+| `HomeScreen.js` | ✅ A + B | Vertical input column, green Start With, navigates to StrategySelect or Solve |
+| `App.js` | ✅ A + B | All 4 screens registered, APP_VERSION = 1.1.0 |
+| `problemLadder.js` | ✅ Session B | getTier, needsStrategyChoice, shouldShowPattern |
+| `strategyEngine.js` | ✅ Session B | buildSteps for DIRECT / TAKE_FROM_TEN / BREAK_APART |
+| `StrategySelectScreen.js` | ✅ Session B | Two-card picker, only shown when ten-crossing |
+| `SolveScreen.js` | ✅ Session B | Tap-to-remove guided steps, frozen role classification, auto-advance |
+| `ResultScreen.js` | ✅ Session B | Spring scale answer reveal, "Did you notice?" for tier 3+ |
+| `NumberBond.js` | ✅ Session B | Whole + two-part visual, used in Break Apart step 1 |
+| Animation layer | ✅ Session B (basic) | react-native Animated API: instruction pulse, answer spring. Reanimated 2 plugin loaded but not yet used — reserved for polish pass. |
 
 ---
 
@@ -132,6 +132,8 @@ Example — `34 − 5`:
 |---|---|---|---|
 | 2026-04-07 | A | 1.0.0 | Pivot from erroneous vanilla scaffold. Expo scaffold (`package.json`, `app.json`, `babel.config.js`, `App.js`), `theme.js`, `frameClassifier.js`, `DotGrid.js`, `TenFrame.js`, `HomeScreen.js` shipped. Live frame preview wired to minuend/subtrahend inputs. Solve button stubbed pending Session B. |
 | 2026-04-07 | A.1 | 1.0.1 | Web parity added: react-dom, react-native-web, @expo/metro-runtime, serve. `app.json` web config (metro bundler, static output). Scripts: dev/web/build/start. Placeholder PNG assets created. `.gitignore` added. JessieProject local folder deleted. Railway auto-deploy via Nixpacks (install → build → start). |
+| 2026-04-07 | A.2 | 1.0.2 | Railway build fixes: replaced 1×1 PNGs with valid sized assets (1024 icon, 1284×2778 splash, 48 favicon); switched web `output` from `static` to `single` (SPA, no expo-router required). |
+| 2026-04-07 | B | 1.1.0 | **Full app build.** problemLadder + strategyEngine logic. NumberBond component. StrategySelectScreen, SolveScreen (interactive tap-to-remove with auto-advance), ResultScreen (spring answer reveal + "Did you notice?" for tier 3+). All 4 screens registered in App.js. HomeScreen rewritten: vertical input column, green "Start with" palette, navigation wired (DIRECT for tier 1, otherwise StrategySelect). Spectator frames now full color (opacity 1.0) per user feedback. DotGrid + TenFrame extended with interactive/onCellPress/isTarget. Animation: react-native Animated API for instruction pulse + answer spring. |
 
 ---
 

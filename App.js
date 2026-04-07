@@ -5,11 +5,14 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
 
 import HomeScreen from './src/screens/HomeScreen';
+import StrategySelectScreen from './src/screens/StrategySelectScreen';
+import SolveScreen from './src/screens/SolveScreen';
+import ResultScreen from './src/screens/ResultScreen';
 import { theme } from './src/constants/theme';
 
 const Stack = createStackNavigator();
 
-export const APP_VERSION = '1.0.0';
+export const APP_VERSION = '1.1.0';
 
 export default function App() {
   return (
@@ -27,6 +30,21 @@ export default function App() {
           name="Home"
           component={HomeScreen}
           options={{ title: `Ten Frame Math  v${APP_VERSION}` }}
+        />
+        <Stack.Screen
+          name="StrategySelect"
+          component={StrategySelectScreen}
+          options={{ title: 'Pick a strategy' }}
+        />
+        <Stack.Screen
+          name="Solve"
+          component={SolveScreen}
+          options={{ title: 'Solve it' }}
+        />
+        <Stack.Screen
+          name="Result"
+          component={ResultScreen}
+          options={{ title: 'Result', headerLeft: () => null }}
         />
       </Stack.Navigator>
     </NavigationContainer>
