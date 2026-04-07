@@ -258,6 +258,13 @@ Lillie's tutor (Mitch) clarified the framing: this app's purpose is to **explain
 ### v1.3.1 (April 7, 2026)
 - "Highlight which to tap" — DotGrid renders the next N "should-tap" cells with a pulsing yellow↔orange ring. SolveScreen computes the set per step (last N filled in remove mode, first N empty in add mode) and recomputes after each tap. Guides without forcing — any valid cell still works.
 
+### Session E.5 — v1.4.5 (April 7, 2026): Phase flow polish + persistent bond + hidden equation card
+- **Watch loop snappier**: 500ms hover after load, then straight into animation. No more per-step read pauses. Bond/final hold trimmed (2000→1200ms), action breath trimmed (550→400ms).
+- **Do → Teach auto-transitions** without requiring the "Now you try!" button. When the final non-action step is reached in Do phase, a 500ms timer transitions to Teach automatically.
+- **Watch → Do auto-transitions** (re-confirmed; was briefly removed during iteration).
+- **Persistent strategy bond**: pulled the bondTargets/bondParts/bondWhole into a top-level `useMemo strategyBond` derived from the first showBond step. Bond satellites + the gray "whole" above frames now persist across ALL steps in Solve, not just the bond step. Lillie sees the decomposition continuously throughout the animation.
+- **Equation card hidden entirely**: removed the bordered instruction card that used to render below the frames. Bonds carry the explanation; the equation text was redundant noise.
+
 ### Session E.4 — v1.4.4 (April 7, 2026): Spectator-aware Take From Ten bond + SUB b ≤ 10
 - **TAKE_FROM_TEN bond fixed for spectator frames.** Previously the strategy card showed 22 = 10 + 2 (which equals 12, not 22 — pedagogically wrong). Now it correctly shows 22 = 10 (locked, gray) + 12. For 33: 33 = 20 (locked) + 13. Tier 2 (no spectators, e.g. 14) keeps the simple 14 = 10 + 4 decomposition.
 - **NumberBond `staticParts` prop**: array of part indices to mark "locked." Locked parts get a gray palette (border, fill, ink) and a tiny "locked" label. Visually communicates "this part doesn't change."

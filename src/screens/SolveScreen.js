@@ -73,6 +73,18 @@ export default function SolveScreen({ route, navigation }) {
     [operation, strategy, a, b]
   );
 
+  // Strategy-level bond persists across ALL steps once introduced.
+  // Pulled from the first step that has showBond=true.
+  const strategyBond = useMemo(() => {
+    const bondStep = steps.find((s) => s.showBond);
+    if (!bondStep) return null;
+    return {
+      targets: bondStep.bondTargets || [],
+      parts: bondStep.bondParts || [],
+      whole: bondStep.bondWhole,
+    };
+  }, [steps]);
+
   const [phase, setPhase] = useState('show');
   const [frames, setFrames] = useState(() =>
     initialFrames.map((f) => ({ ...f, cells: f.cells.slice() }))
@@ -92,6 +104,20 @@ export default function SolveScreen({ route, navigation }) {
     setStepIndex(0);
     setActionCountThisStep(0);
   }, [phase, initialFrames]);
+
+  // Auto-transition Do → Teach when we hit the final non-action step
+  // (skips the "Now you try!" button press requirement)
+  useEffect(() => {
+    if (
+      phase === 'do' &&
+      currentStep &&
+      currentStep.isFinal &&
+      !currentStep.action
+    ) {
+      const t = setTimeout(() => setPhase('teach'), 500);
+      return () => clearTimeout(t);
+    }
+  }, [phase, stepIndex, currentStep]);
 
   // Pulse animation for instruction card
   const pulseAnim = useMemo(() => new Animated.Value(0), []);
@@ -114,8 +140,8 @@ export default function SolveScreen({ route, navigation }) {
       new Promise((resolve) => setTimeout(resolve, ms));
 
     const run = async () => {
-      // Brief startup so the user sees the screen settle before action
-      await wait(350);
+      // 500ms hover after load, then go straight into the animation
+      await wait(500);
       if (cancelShowRef.current) return;
       for (let si = 0; si < steps.length; si++) {
         if (cancelShowRef.current) return;
@@ -124,9 +150,7 @@ export default function SolveScreen({ route, navigation }) {
         const step = steps[si];
 
         if (step.action && step.actionCount > 0) {
-          // Action step: short read pause, then animate dots, then breath
-          await wait(700);
-          if (cancelShowRef.current) return;
+          // Action step: animate dots immediately, then brief breath
           for (let n = 0; n < step.actionCount; n++) {
             await wait(950);
             if (cancelShowRef.current) return;
@@ -142,14 +166,15 @@ export default function SolveScreen({ route, navigation }) {
             });
             setActionCountThisStep((n2) => n2 + 1);
           }
-          await wait(550);
+          await wait(400);
         } else {
-          // Bond / final step: single hold, no separate initial wait
-          await wait(2000);
+          // Bond / final step: short hold to read, then move on
+          await wait(1200);
           if (cancelShowRef.current) return;
         }
       }
 
+      // Watch complete — auto-transition to Try
       if (cancelShowRef.current) return;
       setPhase('do');
     };
@@ -302,9 +327,9 @@ export default function SolveScreen({ route, navigation }) {
           {a} {isAdd ? '+' : '−'} {b}
         </Text>
 
-        {/* Bond whole, rendered above frames during bond step */}
-        {(isShow || isDo) && currentStep.showBond && currentStep.bondWhole != null && (
-          <Text style={styles.bondWhole}>{currentStep.bondWhole}</Text>
+        {/* Bond whole — persists across all steps once strategy bond exists */}
+        {(isShow || isDo) && strategyBond && strategyBond.whole != null && (
+          <Text style={styles.bondWhole}>{strategyBond.whole}</Text>
         )}
 
         <View style={styles.framesWrap}>
@@ -318,27 +343,23 @@ export default function SolveScreen({ route, navigation }) {
                 : [];
 
             // Bond label per frame:
-            //   - During the special bond step, use bondTargets→bondParts mapping
-            //     (with bond color = strategy color)
-            //   - Otherwise, show the live dot count (green satellite)
+            //   - If a strategy bond exists AND this frame is a bond target,
+            //     show the bond part value (constant across all steps)
+            //   - Otherwise, show the live dot count
             let bondLabel = countCells(f.cells);
             let bondColor = 'green';
-            if (
-              (isShow || isDo) &&
-              currentStep.showBond &&
-              currentStep.bondTargets &&
-              currentStep.bondParts
-            ) {
-              bondColor = isAdd ? 'green' : 'red';
-              for (let bi = 0; bi < currentStep.bondTargets.length; bi++) {
-                const tgt = currentStep.bondTargets[bi];
+            if ((isShow || isDo) && strategyBond) {
+              const sbColor = isAdd ? 'green' : 'red';
+              for (let bi = 0; bi < strategyBond.targets.length; bi++) {
+                const tgt = strategyBond.targets[bi];
                 const matches =
                   tgt === 'next-frame'
                     ? f.role === 'empty' &&
                       countCells(f.finalCells || []) > 0
                     : f.role === tgt;
                 if (matches) {
-                  bondLabel = currentStep.bondParts[bi];
+                  bondLabel = strategyBond.parts[bi];
+                  bondColor = sbColor;
                   break;
                 }
               }
@@ -367,52 +388,7 @@ export default function SolveScreen({ route, navigation }) {
           })}
         </View>
 
-        {showInstruction && !currentStep.showBond && (
-          <Animated.View
-            style={[
-              styles.instructionCard,
-              {
-                opacity: pulseAnim,
-                transform: [
-                  {
-                    scale: pulseAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.92, 1],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          >
-            {(() => {
-              const line = currentStep.numericLine || '';
-              if (currentStep.isFinal) {
-                // Final step is the reveal — show the answer big
-                return (
-                  <Text style={styles.instructionText}>
-                    {line.replace(/^=\s*/, '')}
-                  </Text>
-                );
-              }
-              // Equation step — render LHS = ☐
-              const eqIdx = line.indexOf('=');
-              const lhs =
-                eqIdx >= 0 ? line.substring(0, eqIdx).trim() : line;
-              return (
-                <EquationLine
-                  lhs={lhs}
-                  color={theme.colors.ink}
-                  size={32}
-                />
-              );
-            })()}
-            {currentStep.actionCount > 0 && (
-              <Text style={styles.progress}>
-                {actionCountThisStep} / {currentStep.actionCount}
-              </Text>
-            )}
-          </Animated.View>
-        )}
+        {/* Equation/instruction card hidden — bonds carry the explanation. */}
 
         {isTeach && (
           <View style={styles.teachBanner}>
