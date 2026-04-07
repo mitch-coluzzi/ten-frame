@@ -131,8 +131,23 @@ Example — `34 − 5`:
 | Date | Session | Version | Notes |
 |---|---|---|---|
 | 2026-04-07 | A | 1.0.0 | Pivot from erroneous vanilla scaffold. Expo scaffold (`package.json`, `app.json`, `babel.config.js`, `App.js`), `theme.js`, `frameClassifier.js`, `DotGrid.js`, `TenFrame.js`, `HomeScreen.js` shipped. Live frame preview wired to minuend/subtrahend inputs. Solve button stubbed pending Session B. |
+| 2026-04-07 | A.1 | 1.0.1 | Web parity added: react-dom, react-native-web, @expo/metro-runtime, serve. `app.json` web config (metro bundler, static output). Scripts: dev/web/build/start. Placeholder PNG assets created. `.gitignore` added. JessieProject local folder deleted. Railway auto-deploy via Nixpacks (install → build → start). |
 
 ---
+
+## Web + Mobile Parity
+
+**Single codebase, two targets.** The Expo project is configured for web export so Railway can serve a static bundle while the same code runs on iOS/Android via Expo Go (and later as a native APK/IPA).
+
+- **Local mobile dev:** `npm run dev` → Expo Dev Tools → scan QR with Expo Go.
+- **Local web dev:** `npm run web` → opens in browser via react-native-web.
+- **Production web build:** `npm run build` → outputs static bundle to `dist/`.
+- **Production web serve:** `npm start` → `serve dist -s -l $PORT` (Railway-compatible).
+- **Railway flow:** Nixpacks auto-detects Node, runs `npm install` → `npm run build` → `npm start`. No special config needed.
+- **Web deps added:** `react-dom`, `react-native-web`, `@expo/metro-runtime`, `serve`.
+- **Web export config:** `app.json` → `expo.web` = `{ bundler: "metro", output: "static" }`.
+
+Both targets update in parallel from the same commit. Any change to `src/` ships to web on push and is picked up by Expo Go on next reload.
 
 ## Pre-Build Note for Mitch
 
@@ -141,5 +156,8 @@ Example — `34 − 5`:
 ```bash
 cd /mnt/c/Users/mitch/OneDrive/Desktop/ten-frame
 npm install
-npx expo start
+npm run dev      # mobile via Expo Go
+npm run web      # web via react-native-web in browser
 ```
+
+Railway will run `npm install && npm run build && npm start` automatically on push.

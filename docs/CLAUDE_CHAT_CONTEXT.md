@@ -217,3 +217,28 @@ plugins: ['react-native-reanimated/plugin']
 - No score tracking in v1.0 (add in v1.1 if desired)
 - No sound in v1.0
 - APK built locally via `npx expo run:android` or `eas build --platform android --profile preview --local`
+
+---
+
+## Implementation Addendum (Claude Code session log)
+
+### Build Status
+- **Session A — Core Structure: SHIPPED v1.0.0** (April 7, 2026)
+  - Expo scaffold, theme.js, frameClassifier.js, DotGrid.js, TenFrame.js, HomeScreen.js with live frame preview wired to inputs.
+
+### Web + Mobile Parity (added v1.0.1)
+- Spec is React Native / Expo, but Mitch wants the same product accessible via web AND phone, both updated in parallel from a single codebase.
+- Expo Web (react-native-web + @expo/metro-runtime) chosen — same source tree, same components, exports a static bundle for web.
+- Railway hosts the web build via Nixpacks: `npm install → npm run build (expo export -p web) → npm start (serve dist)`.
+- Mitch will test in Railway (web) first before installing Expo Go for mobile.
+
+### Repo Decision
+- Standalone repo `mitch-coluzzi/ten-frame` confirmed (not a subfolder of a "Kids repo").
+- The spec's `/ten-frame/` folder maps to repo root.
+
+### Asset Decision
+- Placeholder 1×1 PNGs created at `assets/{icon,splash,adaptive-icon,favicon}.png` so Expo doesn't error. Real branded assets pending.
+
+### Session Plan Reminder for Next Design Session
+- Session B is queued: problemLadder.js, strategyEngine.js, StrategySelectScreen, SolveScreen, ResultScreen, NumberBond, Reanimated layer, font wiring (Nunito or Fredoka via expo-font).
+- Mitch wants to verify Session A end-to-end on Railway before Session B is built.
