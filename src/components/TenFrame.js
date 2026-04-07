@@ -14,6 +14,7 @@ export default function TenFrame({
   isTarget,
   mode = 'remove',
   hintTrigger = 0,
+  highlightCells = [],
 }) {
   const isSpectator = role === 'spectator';
 
@@ -54,6 +55,7 @@ export default function TenFrame({
         interactive={interactive}
         onCellPress={onCellPress}
         mode={mode}
+        highlightCells={highlightCells}
       />
     </Animated.View>
   );

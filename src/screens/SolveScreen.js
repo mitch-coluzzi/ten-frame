@@ -58,6 +58,24 @@ export default function SolveScreen({ route, navigation }) {
     }).start();
   }, [stepIndex, pulseAnim]);
 
+  // Compute the next-N "should-tap" cells for the target frame
+  const computeHighlightCells = (frameCells, action, remaining) => {
+    if (!action || remaining <= 0) return [];
+    const result = [];
+    if (action === 'remove') {
+      // Last N filled cells in fill order (highest indices first)
+      for (let i = frameCells.length - 1; i >= 0 && result.length < remaining; i--) {
+        if (frameCells[i]) result.push(i);
+      }
+    } else if (action === 'add') {
+      // First N empty cells in fill order
+      for (let i = 0; i < frameCells.length && result.length < remaining; i++) {
+        if (!frameCells[i]) result.push(i);
+      }
+    }
+    return result;
+  };
+
   // Resolve target frame
   const targetFrameIndex = useMemo(() => {
     if (!currentStep.target) return -1;
@@ -144,7 +162,11 @@ export default function SolveScreen({ route, navigation }) {
         <View style={styles.framesWrap}>
           {frames.map((f, idx) => {
             const isTarget = idx === targetFrameIndex;
-            // Wrap in outer Pressable to catch wrong-frame / wrong-cell taps
+            const remaining =
+              (currentStep.actionCount ?? 0) - actionCountThisStep;
+            const highlightCells = isTarget
+              ? computeHighlightCells(f.cells, currentStep.action, remaining)
+              : [];
             return (
               <Pressable
                 key={f.index}
@@ -158,6 +180,7 @@ export default function SolveScreen({ route, navigation }) {
                   isTarget={isTarget}
                   mode={currentStep.action === 'add' ? 'add' : 'remove'}
                   hintTrigger={hintTrigger}
+                  highlightCells={highlightCells}
                   onCellPress={(cellIdx) => handleValidCellPress(idx, cellIdx)}
                 />
               </Pressable>

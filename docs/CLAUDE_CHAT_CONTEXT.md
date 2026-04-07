@@ -255,6 +255,17 @@ Lillie's tutor (Mitch) clarified the framing: this app's purpose is to **explain
 - NumberBond redesigned for emphasis: muted-gray whole on top, angled connector lines, two parts tightly grouped inside a colored pill (oval) with `+` between — visually says "this number is made of these two pieces."
 - StrategySelectScreen now embeds the NumberBond visual at the top of each card, then the operation chain in big numerals.
 
+### v1.3.1 (April 7, 2026)
+- "Highlight which to tap" — DotGrid renders the next N "should-tap" cells with a pulsing yellow↔orange ring. SolveScreen computes the set per step (last N filled in remove mode, first N empty in add mode) and recomputes after each tap. Guides without forcing — any valid cell still works.
+
+### Pedagogical Framing — "Show one, Do one, Teach one" (proposed for next session)
+Mitch suggested the classical pedagogy model. Mapping it to this app:
+- **Show one** — Auto-play mode. The app demonstrates the problem itself: dots animate out, instruction text surfaces in sync, no input required. (Future: pair with audio narration via expo-speech.)
+- **Do one** — Current Solve flow. Highlights guide which cells to tap. Hints catch wrong taps. She drives, app supports.
+- **Teach one** — She picks a problem and either narrates it back to a parent watching, or the app prompts "Now show me how" with no highlights/no instruction text — pure execution. Could also be a "make your own problem" flow built on top of Sandbox.
+
+This is queued for the next session. Open question: should "Show / Do / Teach" be a mode toggle on Home (3-way radio) or a sequence the child progresses through naturally for each problem?
+
 ### Open / Deferred from prior design discussion
 - **Forecast / predict-the-answer feature** — held for next session pending the "explain not test" framing reconsideration. May reshape (e.g. show the answer up front, then walk through WHY).
 - **Audio narration via expo-speech** — held; arguably the highest-impact accessibility win for a 6yo non-reader.
