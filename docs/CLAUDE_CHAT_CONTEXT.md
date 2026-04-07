@@ -258,6 +258,19 @@ Lillie's tutor (Mitch) clarified the framing: this app's purpose is to **explain
 ### v1.3.1 (April 7, 2026)
 - "Highlight which to tap" — DotGrid renders the next N "should-tap" cells with a pulsing yellow↔orange ring. SolveScreen computes the set per step (last N filled in remove mode, first N empty in add mode) and recomputes after each tap. Guides without forcing — any valid cell still works.
 
+### Session E.2 — v1.4.2 (April 7, 2026): Spatial bond + click fix + input clamping
+- **Spatial bond layout**: bond parts now render as satellite circles directly UNDER the frame they target. For 14−5 Break Apart (5 = 4+1), the "4" circle sits below the active-ones frame (the one with 4 dots) and the "1" circle sits below the active-ten frame. Visual association is now direct: "this number affects this frame." TenFrame extended with `bondLabel` + `bondColor` props. The bond `whole` is shown as small gray text above the framesWrap.
+- strategyEngine: BREAK_APART and MAKE_A_TEN bond steps now include a `bondTargets` array (e.g. `['active-ones', 'active-ten']`) mapping each `bondParts[i]` to a frame role.
+- Standalone NumberBond removed from SolveScreen (still used by StrategySelectScreen previews where there are no frames to attach to).
+- **Click fix**: NumberBond + EquationLine got `pointerEvents="none"` so their inner Views (especially the rotated bond lines) don't intercept clicks meant for parent Pressables. StrategySelectScreen cards switched from Pressable to TouchableOpacity for more reliable tap handling on react-native-web.
+- **Input clamping**: typing 41 in the input is now physically prevented. New `sanitizeInput()` helper strips non-digits and clamps to a max on every onChangeText. For SUB: b ≤ a. For ADD: b ≤ MAX − a. Op toggle also re-clamps b. Combined max for addition is 40 (e.g. 20+20).
+
+### Session E.1 — v1.4.1 (April 7, 2026): Bond + equation polish
+- **NumberBond**: redesigned again — now **two separate circles** (one per part), **no `+` sign** between them. Lillie read the previous `+` as making it look like another equation; the bond should say "this is two pieces of one number," not "do this math."
+- **New `EquationLine` component**: renders any equation as `LHS = ☐` with a blank-box visual placeholder for the answer. Strategy cards and SolveScreen instruction text both use it. Equations are now PROMPTS, not completed math — reinforces "discover the answer through the dots."
+- **Phase pills are tappable** — Lillie can jump back to Watch (or any phase) at any time. Cancels in-progress Show loop on jump.
+- **Watch animation slowed** per Lillie's pace: initial pause 800→1400ms, per-dot 600→1100ms, bond/final hold 1700→2800ms, breath 500→900ms. All timing constants live at top of the Show useEffect for easy further tuning.
+
 ### Session E — v1.4.0 (April 7, 2026): Show / Do / Teach SHIPPED
 Linear three-phase sequence per problem, in keeping with the "explain not test" framing. Each problem now runs:
 1. **Show** — app auto-plays the demonstration. Frames mutate on a timer (~600ms/dot), instruction text and bond surface in sync, no input required. Skip-ahead button available.

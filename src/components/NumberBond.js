@@ -1,7 +1,8 @@
 // NumberBond.js
-// Strong visual: whole number appears at top in muted gray, two angled
-// lines drop into a pill-shaped oval that tightly groups the parts with
-// a "+" between them. Conveys "this number is made of these two pieces."
+// Whole (muted gray) on top, two angled lines fanning down to TWO
+// SEPARATE circles — one per part. NO + sign between them. The
+// visual says "this number is two pieces" without looking like an
+// equation.
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
@@ -23,30 +24,38 @@ export default function NumberBond({ whole, parts, color = 'green' }) {
         };
 
   return (
-    <View style={styles.wrap}>
-      {/* Whole — muted gray, de-emphasized */}
+    <View style={styles.wrap} pointerEvents="none">
       <Text style={styles.whole}>{whole}</Text>
 
-      {/* Connector lines */}
       <View style={styles.lines}>
         <View style={[styles.line, styles.lineLeft]} />
         <View style={[styles.line, styles.lineRight]} />
       </View>
 
-      {/* Parts oval — tight group */}
-      <View
-        style={[
-          styles.oval,
-          { borderColor: palette.ring, backgroundColor: palette.fill },
-        ]}
-      >
-        <Text style={[styles.partText, { color: palette.ink }]}>{a}</Text>
-        <Text style={[styles.plusText, { color: palette.ink }]}>+</Text>
-        <Text style={[styles.partText, { color: palette.ink }]}>{b}</Text>
+      <View style={styles.partsRow}>
+        <View
+          style={[
+            styles.circle,
+            { borderColor: palette.ring, backgroundColor: palette.fill },
+          ]}
+        >
+          <Text style={[styles.partText, { color: palette.ink }]}>{a}</Text>
+        </View>
+        <View
+          style={[
+            styles.circle,
+            { borderColor: palette.ring, backgroundColor: palette.fill },
+          ]}
+        >
+          <Text style={[styles.partText, { color: palette.ink }]}>{b}</Text>
+        </View>
       </View>
     </View>
   );
 }
+
+const CIRCLE = 76;
+const GAP = 56;
 
 const styles = StyleSheet.create({
   wrap: {
@@ -56,48 +65,44 @@ const styles = StyleSheet.create({
   whole: {
     fontSize: 56,
     fontWeight: '900',
-    color: '#bdbdbd', // muted gray — de-emphasized
-    marginBottom: 4,
+    color: '#bdbdbd',
+    marginBottom: 2,
   },
   lines: {
-    width: 110,
-    height: 28,
+    width: CIRCLE * 2 + GAP - 40,
+    height: 36,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   line: {
     width: 4,
-    height: 32,
+    height: 44,
     backgroundColor: '#bdbdbd',
     borderRadius: 2,
   },
   lineLeft: {
-    transform: [{ rotate: '30deg' }],
-    marginLeft: 22,
+    transform: [{ rotate: '32deg' }],
+    marginLeft: 28,
   },
   lineRight: {
-    transform: [{ rotate: '-30deg' }],
-    marginRight: 22,
+    transform: [{ rotate: '-32deg' }],
+    marginRight: 28,
   },
-  oval: {
+  partsRow: {
     flexDirection: 'row',
+    gap: GAP,
+  },
+  circle: {
+    width: CIRCLE,
+    height: CIRCLE,
+    borderRadius: CIRCLE / 2,
+    borderWidth: 5,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 999,
-    borderWidth: 4,
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    minWidth: 180,
   },
   partText: {
-    fontSize: 44,
+    fontSize: 38,
     fontWeight: '900',
-    marginHorizontal: 6,
-  },
-  plusText: {
-    fontSize: 36,
-    fontWeight: '900',
-    marginHorizontal: 4,
   },
 });

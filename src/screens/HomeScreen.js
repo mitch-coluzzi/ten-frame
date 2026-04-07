@@ -32,6 +32,17 @@ function clampInt(raw, min, max) {
   return n;
 }
 
+// Strip non-digits and clamp to [0, max]. Empty string allowed.
+function sanitizeInput(text, max) {
+  const digits = (text || '').replace(/[^0-9]/g, '');
+  if (digits === '') return '';
+  const n = parseInt(digits, 10);
+  if (Number.isNaN(n)) return '';
+  if (n < 0) return '0';
+  if (n > max) return String(max);
+  return String(n);
+}
+
 export default function HomeScreen({ navigation }) {
   const [operation, setOperation] = useState(OPERATIONS.SUBTRACT);
   const [aText, setAText] = useState('14');
@@ -88,7 +99,13 @@ export default function HomeScreen({ navigation }) {
               styles.opBtn,
               operation === OPERATIONS.ADD && styles.opBtnAddActive,
             ]}
-            onPress={() => setOperation(OPERATIONS.ADD)}
+            onPress={() => {
+              setOperation(OPERATIONS.ADD);
+              // Re-clamp b for addition: a + b ≤ MAX
+              const av = parseInt(aText || '0', 10) || 0;
+              const bv = parseInt(bText || '0', 10) || 0;
+              if (av + bv > MAX) setBText(String(Math.max(0, MAX - av)));
+            }}
           >
             <Text
               style={[
@@ -129,7 +146,26 @@ export default function HomeScreen({ navigation }) {
           <TextInput
             style={[styles.input, styles.inputStart]}
             value={aText}
-            onChangeText={setAText}
+            onChangeText={(t) => {
+              const clean = sanitizeInput(t, MAX);
+              setAText(clean);
+              // For addition, also clamp b so a + b stays ≤ MAX
+              if (operation === OPERATIONS.ADD && clean !== '') {
+                const av = parseInt(clean, 10);
+                const bv = parseInt(bText || '0', 10);
+                if (!Number.isNaN(av) && !Number.isNaN(bv) && av + bv > MAX) {
+                  setBText(String(Math.max(0, MAX - av)));
+                }
+              }
+              // For subtraction, clamp b so b ≤ a
+              if (operation === OPERATIONS.SUBTRACT && clean !== '') {
+                const av = parseInt(clean, 10);
+                const bv = parseInt(bText || '0', 10);
+                if (!Number.isNaN(av) && !Number.isNaN(bv) && bv > av) {
+                  setBText(String(av));
+                }
+              }
+            }}
             keyboardType="number-pad"
             maxLength={2}
           />
@@ -142,7 +178,14 @@ export default function HomeScreen({ navigation }) {
                 : styles.inputAdd,
             ]}
             value={bText}
-            onChangeText={setBText}
+            onChangeText={(t) => {
+              const av = parseInt(aText || '0', 10) || 0;
+              const cap =
+                operation === OPERATIONS.SUBTRACT
+                  ? Math.min(MAX, av)
+                  : Math.max(0, MAX - av);
+              setBText(sanitizeInput(t, cap));
+            }}
             keyboardType="number-pad"
             maxLength={2}
           />

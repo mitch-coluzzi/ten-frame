@@ -7,6 +7,7 @@ import {
   View,
   Text,
   Pressable,
+  TouchableOpacity,
   StyleSheet,
   SafeAreaView,
   ScrollView,
@@ -14,6 +15,7 @@ import {
 import { theme } from '../constants/theme';
 import { OPERATIONS, STRATEGIES } from '../logic/strategyEngine';
 import NumberBond from '../components/NumberBond';
+import EquationLine from '../components/EquationLine';
 
 export default function StrategySelectScreen({ route, navigation }) {
   const { operation, a, b } = route.params;
@@ -33,7 +35,7 @@ export default function StrategySelectScreen({ route, navigation }) {
     cardA = {
       strategy: STRATEGIES.TAKE_FROM_TEN,
       bond: { whole: a, parts: [10, ones], color: 'green' },
-      lines: [`10 − ${b} = ${remTen}`, `${remTen} + ${ones} = ${remTen + ones}`],
+      lines: [`10 − ${b}`, `${remTen} + ${ones}`],
       bg: theme.colors.greenBg,
       border: theme.colors.greenDark,
       ink: theme.colors.greenDark,
@@ -43,7 +45,7 @@ export default function StrategySelectScreen({ route, navigation }) {
     cardB = {
       strategy: STRATEGIES.BREAK_APART,
       bond: { whole: b, parts: [ones, second], color: 'red' },
-      lines: [`${ones} − ${ones} = 0`, `10 − ${second} = ${10 - second}`],
+      lines: [`${ones} − ${ones}`, `10 − ${second}`],
       bg: theme.colors.redBg,
       border: theme.colors.redDark,
       ink: theme.colors.redDark,
@@ -55,10 +57,7 @@ export default function StrategySelectScreen({ route, navigation }) {
     cardA = {
       strategy: STRATEGIES.MAKE_A_TEN,
       bond: { whole: b, parts: [open, overflow], color: 'green' },
-      lines: [
-        `${a} + ${open} = ${a + open}`,
-        `${a + open} + ${overflow} = ${a + b}`,
-      ],
+      lines: [`${a} + ${open}`, `${a + open} + ${overflow}`],
       bg: theme.colors.greenBg,
       border: theme.colors.greenDark,
       ink: theme.colors.greenDark,
@@ -66,22 +65,20 @@ export default function StrategySelectScreen({ route, navigation }) {
   }
 
   const renderCard = (card) => (
-    <Pressable
-      style={({ pressed }) => [
+    <TouchableOpacity
+      activeOpacity={0.85}
+      style={[
         styles.card,
         { backgroundColor: card.bg, borderColor: card.border },
-        pressed && styles.cardPressed,
       ]}
       onPress={() => choose(card.strategy)}
     >
       <NumberBond {...card.bond} />
       <View style={styles.divider} />
-      {card.lines.map((line, i) => (
-        <Text key={i} style={[styles.cardLine, { color: card.ink }]}>
-          {line}
-        </Text>
+      {card.lines.map((lhs, i) => (
+        <EquationLine key={i} lhs={lhs} color={card.ink} size={28} />
       ))}
-    </Pressable>
+    </TouchableOpacity>
   );
 
   return (

@@ -18,7 +18,7 @@ import {
   Animated,
 } from 'react-native';
 import TenFrame from '../components/TenFrame';
-import NumberBond from '../components/NumberBond';
+import EquationLine from '../components/EquationLine';
 import {
   classifyFrames,
   classifyAddInitial,
@@ -120,12 +120,12 @@ export default function SolveScreen({ route, navigation }) {
         setActionCountThisStep(0);
         const step = steps[si];
 
-        await wait(800);
+        await wait(1400); // initial pause to read instruction
         if (cancelShowRef.current) return;
 
         if (step.action && step.actionCount > 0) {
           for (let n = 0; n < step.actionCount; n++) {
-            await wait(600);
+            await wait(1100); // per-dot pace
             if (cancelShowRef.current) return;
             setFrames((prev) => {
               const tIdx = resolveTargetIdx(prev, step.target);
@@ -140,11 +140,11 @@ export default function SolveScreen({ route, navigation }) {
             setActionCountThisStep((n2) => n2 + 1);
           }
         } else {
-          await wait(1700);
+          await wait(2800); // bond / final hold
           if (cancelShowRef.current) return;
         }
 
-        await wait(500);
+        await wait(900); // breath between steps
       }
 
       if (cancelShowRef.current) return;
@@ -249,8 +249,6 @@ export default function SolveScreen({ route, navigation }) {
 
   // What gets rendered as instruction depends on phase
   const showInstruction = isShow || isDo;
-  const showBondVisual =
-    (isShow || isDo) && currentStep.showBond;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -258,14 +256,23 @@ export default function SolveScreen({ route, navigation }) {
         style={styles.scrollView}
         contentContainerStyle={styles.scroll}
       >
-        {/* Phase pill row */}
+        {/* Phase pill row — tap any pill to jump to that phase */}
         <View style={styles.phaseRow}>
           {PHASES.map((p) => {
             const active = p === phase;
             return (
-              <View
+              <Pressable
                 key={p}
-                style={[styles.phasePill, active && styles.phasePillActive]}
+                onPress={() => {
+                  if (p === phase) return;
+                  cancelShowRef.current = true;
+                  setPhase(p);
+                }}
+                style={({ pressed }) => [
+                  styles.phasePill,
+                  active && styles.phasePillActive,
+                  pressed && { opacity: 0.7 },
+                ]}
               >
                 <Text
                   style={[
@@ -283,7 +290,7 @@ export default function SolveScreen({ route, navigation }) {
                 >
                   {PHASE_LABELS[p]}
                 </Text>
-              </View>
+              </Pressable>
             );
           })}
         </View>
@@ -292,16 +299,44 @@ export default function SolveScreen({ route, navigation }) {
           {a} {isAdd ? '+' : '−'} {b}
         </Text>
 
+        {/* Bond whole, rendered above frames during bond step */}
+        {(isShow || isDo) && currentStep.showBond && currentStep.bondWhole != null && (
+          <Text style={styles.bondWhole}>{currentStep.bondWhole}</Text>
+        )}
+
         <View style={styles.framesWrap}>
           {frames.map((f, idx) => {
             const isTarget = idx === targetFrameIndex && !isShow;
             const remaining =
               (currentStep.actionCount ?? 0) - actionCountThisStep;
-            // Highlights only in Do phase, not Show or Teach
             const highlightCells =
               isDo && isTarget
                 ? computeHighlightCells(f.cells, currentStep.action, remaining)
                 : [];
+
+            // Compute bondLabel for this frame during bond step
+            let bondLabel = null;
+            let bondColor = isAdd ? 'green' : 'red';
+            if (
+              (isShow || isDo) &&
+              currentStep.showBond &&
+              currentStep.bondTargets &&
+              currentStep.bondParts
+            ) {
+              for (let bi = 0; bi < currentStep.bondTargets.length; bi++) {
+                const tgt = currentStep.bondTargets[bi];
+                const matches =
+                  tgt === 'next-frame'
+                    ? f.role === 'empty' &&
+                      countCells(f.finalCells || []) > 0
+                    : f.role === tgt;
+                if (matches) {
+                  bondLabel = currentStep.bondParts[bi];
+                  break;
+                }
+              }
+            }
+
             return (
               <Pressable
                 key={f.index}
@@ -316,6 +351,8 @@ export default function SolveScreen({ route, navigation }) {
                   mode={currentStep.action === 'add' ? 'add' : 'remove'}
                   hintTrigger={hintTrigger}
                   highlightCells={highlightCells}
+                  bondLabel={bondLabel}
+                  bondColor={bondColor}
                   onCellPress={(cellIdx) => handleValidCellPress(idx, cellIdx)}
                 />
               </Pressable>
@@ -323,14 +360,7 @@ export default function SolveScreen({ route, navigation }) {
           })}
         </View>
 
-        {showBondVisual && (
-          <NumberBond
-            whole={currentStep.bondWhole}
-            parts={currentStep.bondParts}
-          />
-        )}
-
-        {showInstruction && (
+        {showInstruction && !currentStep.showBond && (
           <Animated.View
             style={[
               styles.instructionCard,
@@ -347,9 +377,28 @@ export default function SolveScreen({ route, navigation }) {
               },
             ]}
           >
-            <Text style={styles.instructionText}>
-              {currentStep.numericLine}
-            </Text>
+            {(() => {
+              const line = currentStep.numericLine || '';
+              if (currentStep.isFinal) {
+                // Final step is the reveal — show the answer big
+                return (
+                  <Text style={styles.instructionText}>
+                    {line.replace(/^=\s*/, '')}
+                  </Text>
+                );
+              }
+              // Equation step — render LHS = ☐
+              const eqIdx = line.indexOf('=');
+              const lhs =
+                eqIdx >= 0 ? line.substring(0, eqIdx).trim() : line;
+              return (
+                <EquationLine
+                  lhs={lhs}
+                  color={theme.colors.ink}
+                  size={32}
+                />
+              );
+            })()}
             {currentStep.actionCount > 0 && (
               <Text style={styles.progress}>
                 {actionCountThisStep} / {currentStep.actionCount}
@@ -450,6 +499,12 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: theme.colors.ink,
     marginBottom: theme.spacing.md,
+  },
+  bondWhole: {
+    fontSize: 56,
+    fontWeight: '900',
+    color: '#bdbdbd',
+    marginBottom: -8,
   },
   framesWrap: {
     flexDirection: 'row',
