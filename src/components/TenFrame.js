@@ -52,6 +52,20 @@ export default function TenFrame({
 
   return (
     <View style={styles.column}>
+      {bondLabel != null && (
+        <View
+          style={[
+            styles.bondCircle,
+            { borderColor: palette.ring, backgroundColor: palette.fill },
+          ]}
+          pointerEvents="none"
+        >
+          <Text style={[styles.bondText, { color: palette.ink }]}>
+            {bondLabel}
+          </Text>
+        </View>
+      )}
+
       <Animated.View
         style={[
           styles.frame,
@@ -76,20 +90,6 @@ export default function TenFrame({
           highlightCells={highlightCells}
         />
       </Animated.View>
-
-      {bondLabel != null && (
-        <View
-          style={[
-            styles.bondCircle,
-            { borderColor: palette.ring, backgroundColor: palette.fill },
-          ]}
-          pointerEvents="none"
-        >
-          <Text style={[styles.bondText, { color: palette.ink }]}>
-            {bondLabel}
-          </Text>
-        </View>
-      )}
     </View>
   );
 }
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     borderWidth: 5,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 16,
+    marginBottom: 12,
   },
   bondText: {
     fontSize: 32,

@@ -14,6 +14,7 @@ import {
 import { theme } from '../constants/theme';
 import { shouldShowPattern, getTier } from '../logic/problemLadder';
 import { OPERATIONS, STRATEGIES } from '../logic/strategyEngine';
+import { speak, stop as stopSpeaking } from '../lib/narrate';
 
 function alternateStrategy(strategy) {
   if (strategy === STRATEGIES.TAKE_FROM_TEN) return STRATEGIES.BREAK_APART;
@@ -37,7 +38,9 @@ export default function ResultScreen({ route, navigation }) {
       tension: 60,
       useNativeDriver: true,
     }).start();
-  }, [scaleAnim]);
+    speak(String(answer));
+    return () => stopSpeaking();
+  }, [scaleAnim, answer]);
 
   const ones = a % 10;
   const equivalentA = ones + 10;

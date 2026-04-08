@@ -16,14 +16,16 @@ import { theme } from '../constants/theme';
 import { OPERATIONS, STRATEGIES } from '../logic/strategyEngine';
 import NumberBond from '../components/NumberBond';
 import EquationLine from '../components/EquationLine';
+import { speak } from '../lib/narrate';
 
 export default function StrategySelectScreen({ route, navigation }) {
   const { operation, a, b } = route.params;
   const ones = a % 10;
   const isSub = operation === OPERATIONS.SUBTRACT;
 
-  const choose = (strategy) => {
-    navigation.navigate('Solve', { operation, a, b, strategy });
+  const choose = (card) => {
+    if (card.title) speak(card.title);
+    navigation.navigate('Solve', { operation, a, b, strategy: card.strategy });
   };
 
   let cardA = null;
@@ -55,6 +57,7 @@ export default function StrategySelectScreen({ route, navigation }) {
     }
     cardA = {
       strategy: STRATEGIES.TAKE_FROM_TEN,
+      title: 'Take from 10',
       bond: bondConfig,
       lines: [`10 − ${b}`, `${remTen} + ${ones}`],
       bg: theme.colors.greenBg,
@@ -65,6 +68,7 @@ export default function StrategySelectScreen({ route, navigation }) {
     const second = b - ones;
     cardB = {
       strategy: STRATEGIES.BREAK_APART,
+      title: 'Take from 1',
       bond: { whole: b, parts: [ones, second], color: 'red' },
       lines: [`${ones} − ${ones}`, `10 − ${second}`],
       bg: theme.colors.redBg,
@@ -77,6 +81,7 @@ export default function StrategySelectScreen({ route, navigation }) {
     const overflow = b - open;
     cardA = {
       strategy: STRATEGIES.MAKE_A_TEN,
+      title: 'Make a 10',
       bond: { whole: b, parts: [open, overflow], color: 'green' },
       lines: [`${a} + ${open}`, `${a + open} + ${overflow}`],
       bg: theme.colors.greenBg,
@@ -92,7 +97,7 @@ export default function StrategySelectScreen({ route, navigation }) {
         styles.card,
         { backgroundColor: card.bg, borderColor: card.border },
       ]}
-      onPress={() => choose(card.strategy)}
+      onPress={() => choose(card)}
     >
       <NumberBond {...card.bond} />
       <View style={styles.divider} />

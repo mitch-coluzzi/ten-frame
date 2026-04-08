@@ -22,6 +22,7 @@ import {
 import { needsStrategyChoice } from '../logic/problemLadder';
 import { OPERATIONS, STRATEGIES } from '../logic/strategyEngine';
 import { theme } from '../constants/theme';
+import { isMuted, setMuted, subscribeMute } from '../lib/narrate';
 
 const MAX = 40;
 const SUB_B_MAX = 10; // subtrahend capped at 10 (single ten-frame's worth)
@@ -49,6 +50,17 @@ export default function HomeScreen({ navigation }) {
   const [operation, setOperation] = useState(OPERATIONS.SUBTRACT);
   const [aText, setAText] = useState('14');
   const [bText, setBText] = useState('5');
+  const [muted, setMutedState] = useState(isMuted());
+
+  React.useEffect(() => {
+    return subscribeMute((m) => setMutedState(m));
+  }, []);
+
+  const toggleMute = () => {
+    const next = !muted;
+    setMuted(next);
+    setMutedState(next);
+  };
 
   const a = clampInt(aText, 0, MAX);
   const bRaw = clampInt(bText, 0, MAX);
@@ -97,6 +109,19 @@ export default function HomeScreen({ navigation }) {
         style={styles.scrollView}
         contentContainerStyle={styles.scroll}
       >
+        {/* Mute toggle, top-right */}
+        <View style={styles.muteRow}>
+          <Pressable
+            onPress={toggleMute}
+            style={({ pressed }) => [
+              styles.muteBtn,
+              pressed && { opacity: 0.7 },
+            ]}
+          >
+            <Text style={styles.muteIcon}>{muted ? '🔇' : '🔊'}</Text>
+          </Pressable>
+        </View>
+
         {/* Operation toggle */}
         <View style={styles.opToggle}>
           <Pressable
@@ -239,6 +264,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexGrow: 1,
     paddingBottom: theme.spacing.xl,
+  },
+  muteRow: {
+    width: '100%',
+    alignItems: 'flex-end',
+    marginBottom: theme.spacing.sm,
+  },
+  muteBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.colors.frameBg,
+    borderWidth: 2,
+    borderColor: theme.colors.frameBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  muteIcon: {
+    fontSize: 22,
   },
   opToggle: {
     flexDirection: 'row',

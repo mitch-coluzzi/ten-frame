@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import TenFrame from '../components/TenFrame';
 import EquationLine from '../components/EquationLine';
+import { speak, stop as stopSpeaking } from '../lib/narrate';
 import {
   classifyFrames,
   classifyAddInitial,
@@ -130,6 +131,20 @@ export default function SolveScreen({ route, navigation }) {
     }).start();
   }, [stepIndex, phase, pulseAnim]);
 
+  // Speak the current step's instruction. Show + Do phases narrate;
+  // Teach is silent (it's the "show me you know" phase).
+  useEffect(() => {
+    if (phase === 'teach') return;
+    const step = steps[stepIndex];
+    if (!step || !step.instruction) return;
+    speak(step.instruction);
+  }, [stepIndex, phase, steps]);
+
+  // Stop narration on unmount
+  useEffect(() => {
+    return () => stopSpeaking();
+  }, []);
+
   // ───── Show phase auto-player ─────
   const cancelShowRef = useRef(false);
   useEffect(() => {
@@ -182,6 +197,7 @@ export default function SolveScreen({ route, navigation }) {
     run();
     return () => {
       cancelShowRef.current = true;
+      stopSpeaking();
     };
   }, [isShow, steps]);
 

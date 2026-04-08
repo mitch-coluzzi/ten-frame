@@ -258,6 +258,17 @@ Lillie's tutor (Mitch) clarified the framing: this app's purpose is to **explain
 ### v1.3.1 (April 7, 2026)
 - "Highlight which to tap" — DotGrid renders the next N "should-tap" cells with a pulsing yellow↔orange ring. SolveScreen computes the set per step (last N filled in remove mode, first N empty in add mode) and recomputes after each tap. Guides without forcing — any valid cell still works.
 
+### Session F — v1.5.0 (April 7, 2026): Audio narration + bond labels above frames
+- **Audio narration via `expo-speech`**: new `src/lib/narrate.js` wraps speak/stop with a global module-level mute toggle. Works on iOS/Android (native TTS) and on web (Web Speech API fallback). Default voice (en-US, rate 0.9, pitch 1.0). Quiet-fail on errors so narration is never blocking.
+- **Where it speaks**:
+  - SolveScreen: each step's `instruction` field on entry (Show + Do phases). Teach is silent ("show me you know" — no help).
+  - ResultScreen: speaks the answer on mount, stops on unmount.
+  - StrategySelectScreen: speaks the card's `title` on tap.
+- **Mute toggle 🔊/🔇** on HomeScreen top-right. Module-level state with `subscribeMute` so the button mirrors mute state across mount/unmount.
+- **Bond labels flipped above frames** per Mitch's spec: layout is now `equation → bond whole + /\ → labels above frames → frames`. TenFrame's column order changed: bondCircle first, then frame.
+- **Strategy card titles** ("Take from 10", "Take from 1", "Make a 10") added to card data structures but **not displayed visually** — they exist purely for the audio narration on tap. Lillie hears the strategy name when she selects a card.
+- We may want to rename these later — they're working labels for now.
+
 ### Session E.6 — v1.4.6 (April 7, 2026): Bond Y-lines + grey-out consumed parts
 - Above the framesWrap, the bond whole now renders with two angled `/\` connector lines below it (gray bars at ±32deg). Visual `whole → parts` decomposition is now obvious without having to mentally connect the satellite circles to the whole.
 - Bond satellites track a `bondDone` flag. Once Lillie removes the dots associated with a bond part (i.e., `stepIndex > bi + 1` where bi is the bond part index), that satellite turns grey (border, fill, ink). The other part stays in its strategy color until consumed.
