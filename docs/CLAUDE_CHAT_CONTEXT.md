@@ -258,6 +258,28 @@ Lillie's tutor (Mitch) clarified the framing: this app's purpose is to **explain
 ### v1.3.1 (April 7, 2026)
 - "Highlight which to tap" — DotGrid renders the next N "should-tap" cells with a pulsing yellow↔orange ring. SolveScreen computes the set per step (last N filled in remove mode, first N empty in add mode) and recomputes after each tap. Guides without forcing — any valid cell still works.
 
+### Session G.7 — v1.6.7 (April 7, 2026): Slower transitions
+Per Mitch: Lillie needs time to see changes land + Jess narrates manually and needs the screen to hold longer.
+
+**Show loop timings (slowed):**
+- Settle: 500 → 700ms
+- Action read pause: 600 → 900ms
+- Per-dot: 900 → 1100ms
+- Breath after action: 450 → 900ms
+- Bond/final/non-action hold: 2400 → 3200ms
+- New: 1500ms hold before Show → Do transition
+
+**Do/Teach auto-advance for non-action steps:**
+- Bond: 1600 → 2800ms
+- Final: 400 → 2500ms (so the result holds before navigating away)
+- Other non-action: 800 → 1500ms
+
+**Mark-then-vanish (subtraction tap remove):**
+- Grey hold: 500 → 1100ms
+- New: 700ms beat after visual change before stepping forward
+
+All timings are tunable at top of the relevant useEffects in `SolveScreen.js`.
+
 ### Session G.6 — v1.6.6 (April 7, 2026): Mark-then-vanish for remove + bond label flip
 - **Subtraction tap UX**: in Do/Teach remove actions, dots now turn GREY when tapped (don't disappear immediately). After the last marked tap, a 500ms timeout: actually removes them all + flips the bond satellite label from the strategy part value to the live remaining count.
 - For 22−9 Take From Ten: bond satellite shows "10" above active-ten while you tap. Tap 9 dots → all 9 turn grey. After ~500ms: greys vanish, label flips from "10" to "1" (or "3" for a 10−7 case Mitch mentioned). Visceral "see what we're removing, then see the result."

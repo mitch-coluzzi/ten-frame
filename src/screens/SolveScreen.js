@@ -133,10 +133,10 @@ export default function SolveScreen({ route, navigation }) {
     if (currentStep.action && (currentStep.actionCount || 0) > 0) return;
 
     const delay = currentStep.isFinal
-      ? 400
+      ? 2500   // hold the result so it sinks in
       : currentStep.showBond
-      ? 1600
-      : 800;
+      ? 2800   // give Lillie time to read the bond + hear narration
+      : 1500;
 
     const t = setTimeout(() => advanceStep(), delay);
     return () => clearTimeout(t);
@@ -179,8 +179,8 @@ export default function SolveScreen({ route, navigation }) {
       new Promise((resolve) => setTimeout(resolve, ms));
 
     const run = async () => {
-      // 500ms hover after load, then straight into the animation
-      await wait(500);
+      // Settle pause after load
+      await wait(700);
       if (cancelShowRef.current) return;
       for (let si = 0; si < steps.length; si++) {
         if (cancelShowRef.current) return;
@@ -189,12 +189,12 @@ export default function SolveScreen({ route, navigation }) {
         const step = steps[si];
 
         if (step.action && step.actionCount > 0) {
-          // Brief pause to let the instruction speech start
-          await wait(600);
+          // Read the instruction before action begins
+          await wait(900);
           if (cancelShowRef.current) return;
 
           for (let n = 0; n < step.actionCount; n++) {
-            await wait(900);
+            await wait(1100);
             if (cancelShowRef.current) return;
             setFrames((prev) => {
               const tIdx = resolveTargetIdx(prev, step.target);
@@ -208,15 +208,16 @@ export default function SolveScreen({ route, navigation }) {
             });
             setActionCountThisStep((n2) => n2 + 1);
           }
-          await wait(450);
+          await wait(900); // breath after action
         } else {
-          // Bond / final / non-action step: longer hold so speech can finish
-          await wait(2400);
+          // Bond / final / non-action step: long hold so speech can finish
+          await wait(3200);
           if (cancelShowRef.current) return;
         }
       }
 
-      // Watch complete — auto-transition to Try
+      // Final hold before transitioning to Try
+      await wait(1500);
       if (cancelShowRef.current) return;
       setPhase('do');
     };
@@ -279,7 +280,8 @@ export default function SolveScreen({ route, navigation }) {
     setActionCountThisStep((n) => {
       const updated = n + 1;
       if (updated >= currentStep.actionCount) {
-        // Last action: in remove mode, apply marked removals then advance
+        // Last action: in remove mode, hold the grey state, then apply
+        // removals + flip bond label + advance.
         setTimeout(() => {
           if (currentStep.action === 'remove') {
             const marks = markedCellsRef.current;
@@ -295,8 +297,9 @@ export default function SolveScreen({ route, navigation }) {
             });
             clearMarked();
           }
-          advanceStep();
-        }, 500);
+          // Extra beat after the visual change before stepping forward
+          setTimeout(() => advanceStep(), 700);
+        }, 1100);
       }
       return updated;
     });
