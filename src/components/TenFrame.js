@@ -18,6 +18,7 @@ export default function TenFrame({
   highlightCells = [],
   bondLabel = null,
   bondColor = 'green',
+  bondDone = false,
 }) {
   const isSpectator = role === 'spectator';
 
@@ -35,18 +36,19 @@ export default function TenFrame({
     }
   }, [hintTrigger, hintAnim]);
 
-  const palette =
-    bondColor === 'red'
-      ? {
-          ring: theme.colors.redDark,
-          fill: theme.colors.redBg,
-          ink: theme.colors.redDark,
-        }
-      : {
-          ring: theme.colors.greenDark,
-          fill: theme.colors.greenBg,
-          ink: theme.colors.greenDark,
-        };
+  const palette = bondDone
+    ? { ring: '#9e9e9e', fill: '#f0f0f0', ink: '#9e9e9e' }
+    : bondColor === 'red'
+    ? {
+        ring: theme.colors.redDark,
+        fill: theme.colors.redBg,
+        ink: theme.colors.redDark,
+      }
+    : {
+        ring: theme.colors.greenDark,
+        fill: theme.colors.greenBg,
+        ink: theme.colors.greenDark,
+      };
 
   return (
     <View style={styles.column}>

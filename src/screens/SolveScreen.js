@@ -327,9 +327,15 @@ export default function SolveScreen({ route, navigation }) {
           {a} {isAdd ? '+' : '−'} {b}
         </Text>
 
-        {/* Bond whole — persists across all steps once strategy bond exists */}
-        {(isShow || isDo) && strategyBond && strategyBond.whole != null && (
-          <Text style={styles.bondWhole}>{strategyBond.whole}</Text>
+        {/* Bond header — whole + Y lines, persists across all steps */}
+        {(isShow || isDo || isTeach) && strategyBond && strategyBond.whole != null && (
+          <View style={styles.bondHeader} pointerEvents="none">
+            <Text style={styles.bondWhole}>{strategyBond.whole}</Text>
+            <View style={styles.bondLines}>
+              <View style={[styles.bondLine, styles.bondLineLeft]} />
+              <View style={[styles.bondLine, styles.bondLineRight]} />
+            </View>
+          </View>
         )}
 
         <View style={styles.framesWrap}>
@@ -345,10 +351,12 @@ export default function SolveScreen({ route, navigation }) {
             // Bond label per frame:
             //   - If a strategy bond exists AND this frame is a bond target,
             //     show the bond part value (constant across all steps)
+            //   - Mark bondDone once we're past the action step for that part
             //   - Otherwise, show the live dot count
             let bondLabel = countCells(f.cells);
             let bondColor = 'green';
-            if ((isShow || isDo) && strategyBond) {
+            let bondDone = false;
+            if ((isShow || isDo || isTeach) && strategyBond) {
               const sbColor = isAdd ? 'green' : 'red';
               for (let bi = 0; bi < strategyBond.targets.length; bi++) {
                 const tgt = strategyBond.targets[bi];
@@ -360,6 +368,9 @@ export default function SolveScreen({ route, navigation }) {
                 if (matches) {
                   bondLabel = strategyBond.parts[bi];
                   bondColor = sbColor;
+                  // Bond part bi corresponds to step (bi + 1).
+                  // It's "done" once we're past that step.
+                  bondDone = stepIndex > bi + 1;
                   break;
                 }
               }
@@ -381,6 +392,7 @@ export default function SolveScreen({ route, navigation }) {
                   highlightCells={highlightCells}
                   bondLabel={bondLabel}
                   bondColor={bondColor}
+                  bondDone={bondDone}
                   onCellPress={(cellIdx) => handleValidCellPress(idx, cellIdx)}
                 />
               </Pressable>
@@ -483,11 +495,35 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     marginBottom: theme.spacing.md,
   },
+  bondHeader: {
+    alignItems: 'center',
+    marginBottom: -4,
+  },
   bondWhole: {
     fontSize: 56,
     fontWeight: '900',
     color: '#bdbdbd',
-    marginBottom: -8,
+    marginBottom: 2,
+  },
+  bondLines: {
+    width: 140,
+    height: 36,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  bondLine: {
+    width: 4,
+    height: 44,
+    backgroundColor: '#bdbdbd',
+    borderRadius: 2,
+  },
+  bondLineLeft: {
+    transform: [{ rotate: '32deg' }],
+    marginLeft: 32,
+  },
+  bondLineRight: {
+    transform: [{ rotate: '-32deg' }],
+    marginRight: 32,
   },
   framesWrap: {
     flexDirection: 'row',

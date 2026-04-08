@@ -258,6 +258,19 @@ Lillie's tutor (Mitch) clarified the framing: this app's purpose is to **explain
 ### v1.3.1 (April 7, 2026)
 - "Highlight which to tap" — DotGrid renders the next N "should-tap" cells with a pulsing yellow↔orange ring. SolveScreen computes the set per step (last N filled in remove mode, first N empty in add mode) and recomputes after each tap. Guides without forcing — any valid cell still works.
 
+### Session E.6 — v1.4.6 (April 7, 2026): Bond Y-lines + grey-out consumed parts
+- Above the framesWrap, the bond whole now renders with two angled `/\` connector lines below it (gray bars at ±32deg). Visual `whole → parts` decomposition is now obvious without having to mentally connect the satellite circles to the whole.
+- Bond satellites track a `bondDone` flag. Once Lillie removes the dots associated with a bond part (i.e., `stepIndex > bi + 1` where bi is the bond part index), that satellite turns grey (border, fill, ink). The other part stays in its strategy color until consumed.
+- Visually says: "this piece is done, focus on the remaining colored one."
+- TenFrame: new `bondDone` prop.
+- For 22−9 Break Apart: bond shows 9 → (2)(7). After step 1 removes the 2 from active-ones, the (2) satellite turns grey. After step 2 removes the 7 from active-ten, the (7) also turns grey. Result follows.
+
+### Audio narration — Pending decision
+Mitch asked whether audio could play in tune with each step. **Yes, both web and native.** `expo-speech` package wraps platform TTS on iOS/Android and falls back to the browser's `window.speechSynthesis` Web Speech API on web. Free, instant, no API key, no network. Voice quality varies by OS but it's serviceable for K-2 narration.
+- Implementation: `Speech.speak(text)` at the top of each Show step + on Continue tap in Do/Teach. Cancel on phase change/skip via `Speech.stop()`.
+- ~30 lines of code, single dep add (`expo-speech`).
+- Decision: scope for next session (E.7 or F).
+
 ### Session E.5 — v1.4.5 (April 7, 2026): Phase flow polish + persistent bond + hidden equation card
 - **Watch loop snappier**: 500ms hover after load, then straight into animation. No more per-step read pauses. Bond/final hold trimmed (2000→1200ms), action breath trimmed (550→400ms).
 - **Do → Teach auto-transitions** without requiring the "Now you try!" button. When the final non-action step is reached in Do phase, a 500ms timer transitions to Teach automatically.
