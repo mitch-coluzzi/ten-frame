@@ -258,6 +258,11 @@ Lillie's tutor (Mitch) clarified the framing: this app's purpose is to **explain
 ### v1.3.1 (April 7, 2026)
 - "Highlight which to tap" — DotGrid renders the next N "should-tap" cells with a pulsing yellow↔orange ring. SolveScreen computes the set per step (last N filled in remove mode, first N empty in add mode) and recomputes after each tap. Guides without forcing — any valid cell still works.
 
+### Session G.2 — v1.6.2 (April 7, 2026): Audio default OFF
+- Jess will narrate the lessons manually. `narrate.js` `muted` flag default flipped from `false` to `true`. Audio is silent on app load.
+- The 🔊/🔇 toggle on Home still works — tap to re-enable if Jess wants TTS for solo practice later.
+- All `speak()` calls remain in the codebase; they just no-op while muted. Re-enabling is one tap, not a code change.
+
 ### Session G.1 — v1.6.1 (April 7, 2026): Audio quietening per Jess
 - **Removed per-dot count narration** ("1, 2, 3...") in Show + Do. Was distracting per Jess's feedback.
 - **Removed strategy title speech** on card tap. The bond visualization is enough; no need to verbally announce "Take from 10".

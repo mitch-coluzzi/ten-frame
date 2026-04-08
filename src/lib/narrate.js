@@ -10,7 +10,8 @@
 
 import * as Speech from 'expo-speech';
 
-let muted = false;
+// Default OFF — Jess narrates manually. Toggle on via 🔊 button if desired.
+let muted = true;
 const listeners = new Set();
 
 export function setMuted(b) {
