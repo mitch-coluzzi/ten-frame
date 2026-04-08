@@ -327,6 +327,14 @@ export default function SolveScreen({ route, navigation }) {
     ? frames.filter((f) => isInActiveGroup(f))
     : frames;
 
+  // When 2+ spectator frames, aggregate them into a single gray total
+  // (e.g. for 33-something show "20" centered above both spectator 10s).
+  // For a single spectator, keep its per-frame green (10) label.
+  const useAggregateSpectator = spectatorFrames.length >= 2;
+  const spectatorAggregateValue = useAggregateSpectator
+    ? spectatorFrames.reduce((sum, f) => sum + countCells(f.cells), 0)
+    : null;
+
   // Per-frame render — used by both groups
   const renderFrameAt = (f) => {
     const idx = frames.indexOf(f);
@@ -356,6 +364,10 @@ export default function SolveScreen({ route, navigation }) {
           break;
         }
       }
+    }
+    // Suppress per-frame label on spectators when an aggregate is shown
+    if (useAggregateSpectator && f.role === 'spectator') {
+      bondLabel = null;
     }
 
     return (
@@ -437,10 +449,17 @@ export default function SolveScreen({ route, navigation }) {
         </Text>
 
         <View style={styles.framesWrap}>
-          {/* Spectator group (no bond header above) */}
+          {/* Spectator group (with optional aggregate label above) */}
           {spectatorFrames.length > 0 && (
-            <View style={styles.spectatorGroup}>
-              {spectatorFrames.map(renderFrameAt)}
+            <View style={styles.spectatorColumn}>
+              {useAggregateSpectator && (
+                <Text style={styles.spectatorAggregate} pointerEvents="none">
+                  {spectatorAggregateValue}
+                </Text>
+              )}
+              <View style={styles.spectatorGroup}>
+                {spectatorFrames.map(renderFrameAt)}
+              </View>
             </View>
           )}
 
@@ -604,8 +623,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: theme.spacing.lg,
   },
+  spectatorColumn: {
+    alignItems: 'center',
+  },
   spectatorGroup: {
     flexDirection: 'row',
+  },
+  spectatorAggregate: {
+    fontSize: 56,
+    fontWeight: '900',
+    color: '#bdbdbd',
+    marginBottom: 38,
   },
   activeGroup: {
     alignItems: 'center',

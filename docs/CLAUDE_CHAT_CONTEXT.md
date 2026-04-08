@@ -258,6 +258,13 @@ Lillie's tutor (Mitch) clarified the framing: this app's purpose is to **explain
 ### v1.3.1 (April 7, 2026)
 - "Highlight which to tap" — DotGrid renders the next N "should-tap" cells with a pulsing yellow↔orange ring. SolveScreen computes the set per step (last N filled in remove mode, first N empty in add mode) and recomputes after each tap. Guides without forcing — any valid cell still works.
 
+### Session G.3 — v1.6.3 (April 7, 2026): Spectator aggregate label + mute button fix
+- **Spectator aggregate**: when there are 2+ spectator frames (minuend ≥ 30), the per-frame green (10) labels are hidden and replaced with a single gray aggregate label centered above the spectator group ("20" for two spectators, "30" for three).
+- 1 spectator (20-29): unchanged — keeps the per-frame green (10).
+- 0 spectators (≤ 19): unchanged — no spectator group at all.
+- Implementation: `useAggregateSpectator = spectatorFrames.length >= 2`. spectatorColumn wraps the aggregate label above the spectator frames row. Per-frame label suppressed via `bondLabel = null` for spectator frames when in aggregate mode.
+- **Mute button visibility fix**: previously the button used a wrapping flex row that wasn't reliably rendering on web. Rewrote with `alignSelf: 'flex-end'` directly on the Pressable, and added a text label alongside the emoji ("🔇 Sound off" / "🔊 Sound on") so it's recognizable even if the emoji glyph fails to render.
+
 ### Session G.2 — v1.6.2 (April 7, 2026): Audio default OFF
 - Jess will narrate the lessons manually. `narrate.js` `muted` flag default flipped from `false` to `true`. Audio is silent on app load.
 - The 🔊/🔇 toggle on Home still works — tap to re-enable if Jess wants TTS for solo practice later.

@@ -110,17 +110,17 @@ export default function HomeScreen({ navigation }) {
         contentContainerStyle={styles.scroll}
       >
         {/* Mute toggle, top-right */}
-        <View style={styles.muteRow}>
-          <Pressable
-            onPress={toggleMute}
-            style={({ pressed }) => [
-              styles.muteBtn,
-              pressed && { opacity: 0.7 },
-            ]}
-          >
-            <Text style={styles.muteIcon}>{muted ? '🔇' : '🔊'}</Text>
-          </Pressable>
-        </View>
+        <Pressable
+          onPress={toggleMute}
+          style={({ pressed }) => [
+            styles.muteBtn,
+            pressed && { opacity: 0.7 },
+          ]}
+        >
+          <Text style={styles.muteLabel}>
+            {muted ? '🔇 Sound off' : '🔊 Sound on'}
+          </Text>
+        </Pressable>
 
         {/* Operation toggle */}
         <View style={styles.opToggle}>
@@ -265,23 +265,20 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: theme.spacing.xl,
   },
-  muteRow: {
-    width: '100%',
-    alignItems: 'flex-end',
-    marginBottom: theme.spacing.sm,
-  },
   muteBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    alignSelf: 'flex-end',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 18,
     backgroundColor: theme.colors.frameBg,
     borderWidth: 2,
     borderColor: theme.colors.frameBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: theme.spacing.sm,
   },
-  muteIcon: {
-    fontSize: 22,
+  muteLabel: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: theme.colors.ink,
   },
   opToggle: {
     flexDirection: 'row',
