@@ -16,6 +16,7 @@ export default function TenFrame({
   mode = 'remove',
   hintTrigger = 0,
   highlightCells = [],
+  markedCells = [],
   bondLabel = null,
   bondColor = 'green',
   bondDone = false,
@@ -92,6 +93,7 @@ export default function TenFrame({
           onCellPress={onCellPress}
           mode={mode}
           highlightCells={highlightCells}
+          markedCells={markedCells}
         />
       </Animated.View>
     </View>

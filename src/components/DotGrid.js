@@ -31,6 +31,7 @@ export default function DotGrid({
   mode = 'remove',
   onCellPress,
   highlightCells = [],
+  markedCells = [],
 }) {
   // Shared pulse loop
   const pulseAnim = useRef(new Animated.Value(0)).current;
@@ -54,21 +55,27 @@ export default function DotGrid({
   }, [pulseAnim]);
 
   const highlightSet = new Set(highlightCells);
+  const markedSet = new Set(markedCells);
 
-  const isCellTappable = (filled) => {
+  const isCellTappable = (filled, idx) => {
     if (!interactive) return false;
     if (mode === 'sandbox') return true;
-    if (mode === 'remove') return filled;
+    if (mode === 'remove') return filled && !markedSet.has(idx);
     if (mode === 'add') return !filled;
     return false;
   };
 
   const renderCell = (idx, filled, tappable) => {
     const isHighlight = highlightSet.has(idx);
+    const isMarked = markedSet.has(idx);
 
     const baseStyle = [
       styles.cell,
-      filled ? styles.cellFilled : styles.cellEmpty,
+      filled
+        ? isMarked
+          ? styles.cellMarked
+          : styles.cellFilled
+        : styles.cellEmpty,
       tappable && mode === 'add' && styles.cellTapAdd,
     ];
 
@@ -119,7 +126,7 @@ export default function DotGrid({
           {Array.from({ length: COLS }).map((__, col) => {
             const idx = posToIndex(row, col);
             const filled = cells[idx];
-            const tappable = isCellTappable(filled);
+            const tappable = isCellTappable(filled, idx);
             return renderCell(idx, filled, tappable);
           })}
         </View>
@@ -159,6 +166,10 @@ const styles = StyleSheet.create({
   cellTapAdd: {
     borderColor: theme.colors.greenDark,
     borderStyle: 'dashed',
+  },
+  cellMarked: {
+    backgroundColor: '#bdbdbd',
+    borderColor: '#9e9e9e',
   },
   highlightRing: {
     position: 'absolute',

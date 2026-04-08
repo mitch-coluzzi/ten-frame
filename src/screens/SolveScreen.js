@@ -93,6 +93,16 @@ export default function SolveScreen({ route, navigation }) {
   const [stepIndex, setStepIndex] = useState(0);
   const [actionCountThisStep, setActionCountThisStep] = useState(0);
   const [hintTrigger, setHintTrigger] = useState(0);
+  // Marked cells (grey "about to be removed" state) — only used in Do/Teach
+  // remove actions. Stored in a ref for sync access; markedVersion forces
+  // re-renders when the ref mutates.
+  const markedCellsRef = useRef({});
+  const [markedVersion, setMarkedVersion] = useState(0);
+  const bumpMarked = () => setMarkedVersion((v) => v + 1);
+  const clearMarked = () => {
+    markedCellsRef.current = {};
+    bumpMarked();
+  };
 
   const currentStep = steps[stepIndex];
   const isShow = phase === 'show';
@@ -104,7 +114,15 @@ export default function SolveScreen({ route, navigation }) {
     setFrames(initialFrames.map((f) => ({ ...f, cells: f.cells.slice() })));
     setStepIndex(0);
     setActionCountThisStep(0);
+    clearMarked();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, initialFrames]);
+
+  // Clear marks on step change too
+  useEffect(() => {
+    clearMarked();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stepIndex]);
 
   // Auto-advance non-action steps in Do + Teach. No "Next" button needed
   // for bond / final / reveal steps — they hold for a moment, then move on.
@@ -241,23 +259,44 @@ export default function SolveScreen({ route, navigation }) {
     }
     if (!currentStep.action) return;
 
-    setFrames((prev) => {
-      const next = prev.map((f) => ({ ...f, cells: f.cells.slice() }));
-      const tgt = next[frameIdx];
-      if (currentStep.action === 'remove') {
-        if (!tgt.cells[cellIdx]) return prev;
-        tgt.cells[cellIdx] = false;
-      } else if (currentStep.action === 'add') {
+    if (currentStep.action === 'remove') {
+      // Mark the cell grey instead of removing immediately. The actual
+      // mutation happens after the last marked tap, alongside bond label flip.
+      const cur = markedCellsRef.current[frameIdx] || [];
+      if (cur.includes(cellIdx) || !frames[frameIdx].cells[cellIdx]) return;
+      markedCellsRef.current[frameIdx] = [...cur, cellIdx];
+      bumpMarked();
+    } else if (currentStep.action === 'add') {
+      setFrames((prev) => {
+        const next = prev.map((f) => ({ ...f, cells: f.cells.slice() }));
+        const tgt = next[frameIdx];
         if (tgt.cells[cellIdx]) return prev;
         tgt.cells[cellIdx] = true;
-      }
-      return next;
-    });
+        return next;
+      });
+    }
 
     setActionCountThisStep((n) => {
       const updated = n + 1;
       if (updated >= currentStep.actionCount) {
-        setTimeout(() => advanceStep(), 350);
+        // Last action: in remove mode, apply marked removals then advance
+        setTimeout(() => {
+          if (currentStep.action === 'remove') {
+            const marks = markedCellsRef.current;
+            setFrames((prev) => {
+              const next = prev.map((f) => ({ ...f, cells: f.cells.slice() }));
+              for (const fIdxStr in marks) {
+                const fIdx = parseInt(fIdxStr, 10);
+                for (const cIdx of marks[fIdx]) {
+                  if (next[fIdx]) next[fIdx].cells[cIdx] = false;
+                }
+              }
+              return next;
+            });
+            clearMarked();
+          }
+          advanceStep();
+        }, 500);
       }
       return updated;
     });
@@ -273,6 +312,7 @@ export default function SolveScreen({ route, navigation }) {
     setFrames(initialFrames.map((f) => ({ ...f, cells: f.cells.slice() })));
     setStepIndex(0);
     setActionCountThisStep(0);
+    clearMarked();
   };
 
   const advanceStep = () => {
@@ -358,9 +398,15 @@ export default function SolveScreen({ route, navigation }) {
             ? f.role === 'empty' && countCells(f.finalCells || []) > 0
             : f.role === tgt;
         if (matches) {
-          bondLabel = strategyBond.parts[bi];
           bondColor = sbColor;
-          bondDone = stepIndex > bi + 1;
+          if (stepIndex > bi + 1) {
+            // Action consumed: flip to remaining live count
+            bondLabel = countCells(f.cells);
+            bondDone = true;
+          } else {
+            bondLabel = strategyBond.parts[bi];
+            bondDone = false;
+          }
           break;
         }
       }
@@ -369,6 +415,8 @@ export default function SolveScreen({ route, navigation }) {
     if (useAggregateSpectator && f.role === 'spectator') {
       bondLabel = null;
     }
+
+    const markedForFrame = markedCellsRef.current[idx] || [];
 
     return (
       <Pressable
@@ -387,6 +435,7 @@ export default function SolveScreen({ route, navigation }) {
           mode={currentStep.action === 'add' ? 'add' : 'remove'}
           hintTrigger={hintTrigger}
           highlightCells={highlightCells}
+          markedCells={markedForFrame}
           bondLabel={bondLabel}
           bondColor={bondColor}
           bondDone={bondDone}

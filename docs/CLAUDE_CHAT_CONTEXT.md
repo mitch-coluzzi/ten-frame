@@ -258,6 +258,15 @@ Lillie's tutor (Mitch) clarified the framing: this app's purpose is to **explain
 ### v1.3.1 (April 7, 2026)
 - "Highlight which to tap" — DotGrid renders the next N "should-tap" cells with a pulsing yellow↔orange ring. SolveScreen computes the set per step (last N filled in remove mode, first N empty in add mode) and recomputes after each tap. Guides without forcing — any valid cell still works.
 
+### Session G.6 — v1.6.6 (April 7, 2026): Mark-then-vanish for remove + bond label flip
+- **Subtraction tap UX**: in Do/Teach remove actions, dots now turn GREY when tapped (don't disappear immediately). After the last marked tap, a 500ms timeout: actually removes them all + flips the bond satellite label from the strategy part value to the live remaining count.
+- For 22−9 Take From Ten: bond satellite shows "10" above active-ten while you tap. Tap 9 dots → all 9 turn grey. After ~500ms: greys vanish, label flips from "10" to "1" (or "3" for a 10−7 case Mitch mentioned). Visceral "see what we're removing, then see the result."
+- Implementation: `markedCellsRef = useRef({})` keyed by frame index, `markedVersion` counter to force re-renders. `bumpMarked()` after each tap, `clearMarked()` on phase/step change + Start Over.
+- DotGrid: new `markedCells` prop. Marked cells render in grey (#bdbdbd bg, #9e9e9e border) and become non-tappable so the user can't double-mark.
+- Bond label resolution updated: when `stepIndex > bi + 1` (action consumed), `bondLabel = countCells(f.cells)` instead of `strategyBond.parts[bi]`. The label naturally flips at the same moment as the cells mutate.
+- Add actions still mutate immediately — only remove gets the grey treatment.
+- Show phase still uses instant per-dot mutation (the auto-player drives timing). Could be applied there too in a future polish pass.
+
 ### Session G.5 — v1.6.5 (April 7, 2026): Frame alignment fix
 - TenFrame always reserves bondCircle space (via a transparent border View when `bondLabel == null`).
 - Previously: when bondLabel was null (spectator frames in aggregate mode), TenFrame's column had no bondCircle and was shorter than active TenFrames. With cross-column flex-end alignment, the spectator frames sat higher than active frames because their columns started lower in the framesWrap.
