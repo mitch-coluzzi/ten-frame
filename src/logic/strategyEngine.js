@@ -84,18 +84,21 @@ function buildSubSteps(strategy, minuend, subtrahend) {
         action: 'remove',
         numericLine: `10 − ${subtrahend} = ${remainingInTen}`,
       },
-      {
-        instruction: `${finalTotal}!`,
-        spokenInstruction:
-          staticTotal > 0
-            ? `${remainingInTen} plus ${ones} equals ${remainingInTen + ones}, plus ${staticTotal} equals ${finalTotal}`
-            : `${remainingInTen} plus ${ones} equals ${finalTotal}`,
-        target: null,
-        actionCount: 0,
-        action: null,
-        isFinal: true,
-        numericLine: `= ${finalTotal}`,
-      },
+      (() => {
+        const activeRemain = remainingInTen + ones;
+        return {
+          instruction: `${finalTotal}!`,
+          spokenInstruction:
+            staticTotal > 0
+              ? `${activeRemain} remain, plus ${staticTotal} equals ${finalTotal}`
+              : `${activeRemain} remain`,
+          target: null,
+          actionCount: 0,
+          action: null,
+          isFinal: true,
+          numericLine: `= ${finalTotal}`,
+        };
+      })(),
     ];
   }
 
@@ -134,14 +137,14 @@ function buildSubSteps(strategy, minuend, subtrahend) {
       (() => {
         const tens = Math.floor(minuend / 10);
         const staticTotal = 10 * Math.max(0, tens - 1);
-        const activeTenLeft = 10 - secondChunk;
+        const activeRemain = 10 - secondChunk; // active-ones is empty after step 1
         const total = minuend - subtrahend;
         return {
           instruction: `${total}!`,
           spokenInstruction:
             staticTotal > 0
-              ? `${activeTenLeft} plus ${staticTotal} equals ${total}`
-              : `${total}`,
+              ? `${activeRemain} remain, plus ${staticTotal} equals ${total}`
+              : `${activeRemain} remain`,
           target: null,
           actionCount: 0,
           action: null,

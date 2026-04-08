@@ -24,7 +24,6 @@ export default function StrategySelectScreen({ route, navigation }) {
   const isSub = operation === OPERATIONS.SUBTRACT;
 
   const choose = (card) => {
-    if (card.title) speak(card.title);
     navigation.navigate('Solve', { operation, a, b, strategy: card.strategy });
   };
 

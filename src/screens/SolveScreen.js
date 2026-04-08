@@ -138,12 +138,10 @@ export default function SolveScreen({ route, navigation }) {
 
   // Speak the current step's instruction. Show + Do phases narrate;
   // Teach is silent (it's the "show me you know" phase).
-  // For action steps in Show, the per-dot count handles speech instead.
   useEffect(() => {
     if (phase === 'teach') return;
     const step = steps[stepIndex];
     if (!step) return;
-    if (phase === 'show' && step.action && (step.actionCount || 0) > 0) return;
     const text = step.spokenInstruction || step.instruction;
     if (text) speak(text);
   }, [stepIndex, phase, steps]);
@@ -191,8 +189,6 @@ export default function SolveScreen({ route, navigation }) {
               return next;
             });
             setActionCountThisStep((n2) => n2 + 1);
-            // Count along: speak the running tally
-            speak(String(n + 1));
           }
           await wait(450);
         } else {
@@ -260,8 +256,6 @@ export default function SolveScreen({ route, navigation }) {
 
     setActionCountThisStep((n) => {
       const updated = n + 1;
-      // Count along: speak the running tally on each valid tap
-      if (phase === 'do') speak(String(updated));
       if (updated >= currentStep.actionCount) {
         setTimeout(() => advanceStep(), 350);
       }

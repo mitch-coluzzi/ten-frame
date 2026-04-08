@@ -258,6 +258,12 @@ Lillie's tutor (Mitch) clarified the framing: this app's purpose is to **explain
 ### v1.3.1 (April 7, 2026)
 - "Highlight which to tap" — DotGrid renders the next N "should-tap" cells with a pulsing yellow↔orange ring. SolveScreen computes the set per step (last N filled in remove mode, first N empty in add mode) and recomputes after each tap. Guides without forcing — any valid cell still works.
 
+### Session G.1 — v1.6.1 (April 7, 2026): Audio quietening per Jess
+- **Removed per-dot count narration** ("1, 2, 3...") in Show + Do. Was distracting per Jess's feedback.
+- **Removed strategy title speech** on card tap. The bond visualization is enough; no need to verbally announce "Take from 10".
+- **Final reveal phrasing changed to "X remain"**: instead of "5 plus 4 equals 9" → "9 remain". For tier 3+: "3 remain, plus 10 equals 13" preserves the static add-up.
+- Action step instructions now play normally in Show (no count-suppression gate).
+
 ### Session G — v1.6.0 (April 7, 2026): Bond gap closed, count-along audio, auto-advance, bond centering
 - **Take from 10 now has a bond step** in the Solve flow. Previously TAKE_FROM_TEN had no `showBond=true` step, so the bond visualization disappeared between StrategySelect and Solve. Now: bond step at the start with `bondWhole = 10 + ones` (the working part — 12 for 22-9, 14 for 14-5), `bondParts = [10, ones]`, `bondTargets = ['active-ten', 'active-ones']`. Take from 10 final step also fixed: previously omitted spectator addition (showed "1+2=3" for 22-9 instead of 13). Now computes `finalTotal = staticTotal + remainingInTen + ones`.
 - **Count-along audio**: in Show, the loop now `speak(String(n+1))` after each dot mutation. In Do, `handleValidCellPress` speaks the running tally on each valid tap. Counts the action being performed ("1, 2, 3..."), not the remaining count. Teach is silent.
