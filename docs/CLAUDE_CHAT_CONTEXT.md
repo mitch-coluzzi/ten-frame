@@ -258,6 +258,12 @@ Lillie's tutor (Mitch) clarified the framing: this app's purpose is to **explain
 ### v1.3.1 (April 7, 2026)
 - "Highlight which to tap" — DotGrid renders the next N "should-tap" cells with a pulsing yellow↔orange ring. SolveScreen computes the set per step (last N filled in remove mode, first N empty in add mode) and recomputes after each tap. Guides without forcing — any valid cell still works.
 
+### Session G.5 — v1.6.5 (April 7, 2026): Frame alignment fix
+- TenFrame always reserves bondCircle space (via a transparent border View when `bondLabel == null`).
+- Previously: when bondLabel was null (spectator frames in aggregate mode), TenFrame's column had no bondCircle and was shorter than active TenFrames. With cross-column flex-end alignment, the spectator frames sat higher than active frames because their columns started lower in the framesWrap.
+- Now: spectator and active TenFrames always have identical total column heights → frame rows align horizontally on the same baseline, regardless of which frames carry visible labels.
+- The v1.6.4 MAKE_A_TEN fix verified in code at strategyEngine.js line 200: `bondTargets: ['active-ten', 'active-ones']`.
+
 ### Session G.4 — v1.6.4 (April 7, 2026): Make a Ten addition fix
 - **Bug**: MAKE_A_TEN strategy was using bondTargets `['active-ones', 'next-frame']` which didn't match how frames are actually labeled by `classifyAddInitial`.
 - **Why it was wrong**: `classifyAddInitial(a, b)` calls `classifyFrames(SUM, b)` to get frames sized for the SUM. Roles are then assigned based on the FINAL state — so the partial frame currently holding the existing ones (e.g. 5 out of 10 for a=25) is labeled `active-ten` because in the final state it WILL be full. The new frame for the leftover ones is labeled `active-ones`.

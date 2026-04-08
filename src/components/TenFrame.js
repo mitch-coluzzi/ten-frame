@@ -50,21 +50,25 @@ export default function TenFrame({
         ink: theme.colors.greenDark,
       };
 
+  // Always reserve the bondCircle space so frames align across columns
+  // even when some frames have no label (e.g. aggregated spectators).
   return (
     <View style={styles.column}>
-      {bondLabel != null && (
-        <View
-          style={[
-            styles.bondCircle,
-            { borderColor: palette.ring, backgroundColor: palette.fill },
-          ]}
-          pointerEvents="none"
-        >
+      <View
+        style={[
+          styles.bondCircle,
+          bondLabel != null
+            ? { borderColor: palette.ring, backgroundColor: palette.fill }
+            : { borderColor: 'transparent', backgroundColor: 'transparent' },
+        ]}
+        pointerEvents="none"
+      >
+        {bondLabel != null && (
           <Text style={[styles.bondText, { color: palette.ink }]}>
             {bondLabel}
           </Text>
-        </View>
-      )}
+        )}
+      </View>
 
       <Animated.View
         style={[
