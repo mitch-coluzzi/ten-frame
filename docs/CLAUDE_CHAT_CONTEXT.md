@@ -258,6 +258,15 @@ Lillie's tutor (Mitch) clarified the framing: this app's purpose is to **explain
 ### v1.3.1 (April 7, 2026)
 - "Highlight which to tap" — DotGrid renders the next N "should-tap" cells with a pulsing yellow↔orange ring. SolveScreen computes the set per step (last N filled in remove mode, first N empty in add mode) and recomputes after each tap. Guides without forcing — any valid cell still works.
 
+### Session G — v1.6.0 (April 7, 2026): Bond gap closed, count-along audio, auto-advance, bond centering
+- **Take from 10 now has a bond step** in the Solve flow. Previously TAKE_FROM_TEN had no `showBond=true` step, so the bond visualization disappeared between StrategySelect and Solve. Now: bond step at the start with `bondWhole = 10 + ones` (the working part — 12 for 22-9, 14 for 14-5), `bondParts = [10, ones]`, `bondTargets = ['active-ten', 'active-ones']`. Take from 10 final step also fixed: previously omitted spectator addition (showed "1+2=3" for 22-9 instead of 13). Now computes `finalTotal = staticTotal + remainingInTen + ones`.
+- **Count-along audio**: in Show, the loop now `speak(String(n+1))` after each dot mutation. In Do, `handleValidCellPress` speaks the running tally on each valid tap. Counts the action being performed ("1, 2, 3..."), not the remaining count. Teach is silent.
+- **Spoken instruction phrasing**: every step now has a `spokenInstruction` field with kid-friendly TTS-optimized phrasing. Bond steps say "5 splits into 4 and 1" instead of "5 = 4 + 1". Tier 3+ final steps narrate the full add-up: "3 plus 10 equals 13" so the spectator contribution is audible. Falls back to `instruction` if absent.
+- **Auto-advance non-action steps in Do + Teach**: bond/final steps no longer require a Next button. Universal useEffect: bond steps auto-advance after 1600ms, final after 400ms, other non-action after 800ms. Action steps still wait for Lillie's input.
+- **Show bond hold extended** from 1200ms → 2400ms so TTS has time to finish "X splits into Y and Z" before moving on. Action step initial pause restored to 600ms so the instruction speech kicks off before the per-dot count overrides it.
+- **Bond header centered over active group**: framesWrap split into `spectatorGroup` (no header) and `activeGroup` (with bond header above). For 22-9, the gray "12" with `/\` lines now sits centered over the active-ten + active-ones frames only, not over all three including the spectator.
+- **Start Over button** on Solve in Do + Teach phases. Resets frame state to initial, stepIndex to 0, action count to 0, stops in-flight speech. Doesn't change phase.
+
 ### Session F — v1.5.0 (April 7, 2026): Audio narration + bond labels above frames
 - **Audio narration via `expo-speech`**: new `src/lib/narrate.js` wraps speak/stop with a global module-level mute toggle. Works on iOS/Android (native TTS) and on web (Web Speech API fallback). Default voice (en-US, rate 0.9, pitch 1.0). Quiet-fail on errors so narration is never blocking.
 - **Where it speaks**:

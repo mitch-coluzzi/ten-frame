@@ -106,18 +106,23 @@ export default function SolveScreen({ route, navigation }) {
     setActionCountThisStep(0);
   }, [phase, initialFrames]);
 
-  // Auto-transition Do → Teach when we hit the final non-action step
-  // (skips the "Now you try!" button press requirement)
+  // Auto-advance non-action steps in Do + Teach. No "Next" button needed
+  // for bond / final / reveal steps — they hold for a moment, then move on.
+  // Action steps (where Lillie taps dots) still wait for her input.
   useEffect(() => {
-    if (
-      phase === 'do' &&
-      currentStep &&
-      currentStep.isFinal &&
-      !currentStep.action
-    ) {
-      const t = setTimeout(() => setPhase('teach'), 500);
-      return () => clearTimeout(t);
-    }
+    if (phase !== 'do' && phase !== 'teach') return;
+    if (!currentStep) return;
+    if (currentStep.action && (currentStep.actionCount || 0) > 0) return;
+
+    const delay = currentStep.isFinal
+      ? 400
+      : currentStep.showBond
+      ? 1600
+      : 800;
+
+    const t = setTimeout(() => advanceStep(), delay);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, stepIndex, currentStep]);
 
   // Pulse animation for instruction card
@@ -133,11 +138,14 @@ export default function SolveScreen({ route, navigation }) {
 
   // Speak the current step's instruction. Show + Do phases narrate;
   // Teach is silent (it's the "show me you know" phase).
+  // For action steps in Show, the per-dot count handles speech instead.
   useEffect(() => {
     if (phase === 'teach') return;
     const step = steps[stepIndex];
-    if (!step || !step.instruction) return;
-    speak(step.instruction);
+    if (!step) return;
+    if (phase === 'show' && step.action && (step.actionCount || 0) > 0) return;
+    const text = step.spokenInstruction || step.instruction;
+    if (text) speak(text);
   }, [stepIndex, phase, steps]);
 
   // Stop narration on unmount
@@ -155,7 +163,7 @@ export default function SolveScreen({ route, navigation }) {
       new Promise((resolve) => setTimeout(resolve, ms));
 
     const run = async () => {
-      // 500ms hover after load, then go straight into the animation
+      // 500ms hover after load, then straight into the animation
       await wait(500);
       if (cancelShowRef.current) return;
       for (let si = 0; si < steps.length; si++) {
@@ -165,9 +173,12 @@ export default function SolveScreen({ route, navigation }) {
         const step = steps[si];
 
         if (step.action && step.actionCount > 0) {
-          // Action step: animate dots immediately, then brief breath
+          // Brief pause to let the instruction speech start
+          await wait(600);
+          if (cancelShowRef.current) return;
+
           for (let n = 0; n < step.actionCount; n++) {
-            await wait(950);
+            await wait(900);
             if (cancelShowRef.current) return;
             setFrames((prev) => {
               const tIdx = resolveTargetIdx(prev, step.target);
@@ -180,11 +191,13 @@ export default function SolveScreen({ route, navigation }) {
               return next;
             });
             setActionCountThisStep((n2) => n2 + 1);
+            // Count along: speak the running tally
+            speak(String(n + 1));
           }
-          await wait(400);
+          await wait(450);
         } else {
-          // Bond / final step: short hold to read, then move on
-          await wait(1200);
+          // Bond / final / non-action step: longer hold so speech can finish
+          await wait(2400);
           if (cancelShowRef.current) return;
         }
       }
@@ -247,6 +260,8 @@ export default function SolveScreen({ route, navigation }) {
 
     setActionCountThisStep((n) => {
       const updated = n + 1;
+      // Count along: speak the running tally on each valid tap
+      if (phase === 'do') speak(String(updated));
       if (updated >= currentStep.actionCount) {
         setTimeout(() => advanceStep(), 350);
       }
@@ -257,6 +272,13 @@ export default function SolveScreen({ route, navigation }) {
   const handleFrameTap = () => {
     if (isShow) return;
     triggerHint();
+  };
+
+  const restartCurrentPhase = () => {
+    stopSpeaking();
+    setFrames(initialFrames.map((f) => ({ ...f, cells: f.cells.slice() })));
+    setStepIndex(0);
+    setActionCountThisStep(0);
   };
 
   const advanceStep = () => {
@@ -290,6 +312,83 @@ export default function SolveScreen({ route, navigation }) {
 
   // Skip button only during Show
   const showSkipBtn = isShow;
+
+  // Helper: is this frame in the strategy bond's "active group"?
+  const isInActiveGroup = (f) => {
+    if (!strategyBond) return false;
+    for (const tgt of strategyBond.targets) {
+      if (tgt === 'next-frame') {
+        if (f.role === 'empty' && countCells(f.finalCells || []) > 0) return true;
+      } else if (f.role === tgt) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const spectatorFrames = strategyBond
+    ? frames.filter((f) => !isInActiveGroup(f))
+    : [];
+  const activeFrames = strategyBond
+    ? frames.filter((f) => isInActiveGroup(f))
+    : frames;
+
+  // Per-frame render — used by both groups
+  const renderFrameAt = (f) => {
+    const idx = frames.indexOf(f);
+    const isTargetFrame = idx === targetFrameIndex && !isShow;
+    const remaining =
+      (currentStep.actionCount ?? 0) - actionCountThisStep;
+    const highlightCells =
+      isDo && isTargetFrame
+        ? computeHighlightCells(f.cells, currentStep.action, remaining)
+        : [];
+
+    let bondLabel = countCells(f.cells);
+    let bondColor = 'green';
+    let bondDone = false;
+    if ((isShow || isDo || isTeach) && strategyBond) {
+      const sbColor = isAdd ? 'green' : 'red';
+      for (let bi = 0; bi < strategyBond.targets.length; bi++) {
+        const tgt = strategyBond.targets[bi];
+        const matches =
+          tgt === 'next-frame'
+            ? f.role === 'empty' && countCells(f.finalCells || []) > 0
+            : f.role === tgt;
+        if (matches) {
+          bondLabel = strategyBond.parts[bi];
+          bondColor = sbColor;
+          bondDone = stepIndex > bi + 1;
+          break;
+        }
+      }
+    }
+
+    return (
+      <Pressable
+        key={f.index}
+        onPress={handleFrameTap}
+        style={styles.frameTouch}
+      >
+        <TenFrame
+          cells={f.cells}
+          role={f.role}
+          interactive={isTargetFrame}
+          isTarget={
+            isTargetFrame ||
+            (isShow && idx === resolveTargetIdx(frames, currentStep.target))
+          }
+          mode={currentStep.action === 'add' ? 'add' : 'remove'}
+          hintTrigger={hintTrigger}
+          highlightCells={highlightCells}
+          bondLabel={bondLabel}
+          bondColor={bondColor}
+          bondDone={bondDone}
+          onCellPress={(cellIdx) => handleValidCellPress(idx, cellIdx)}
+        />
+      </Pressable>
+    );
+  };
 
   // What gets rendered as instruction depends on phase
   const showInstruction = isShow || isDo;
@@ -343,77 +442,29 @@ export default function SolveScreen({ route, navigation }) {
           {a} {isAdd ? '+' : '−'} {b}
         </Text>
 
-        {/* Bond header — whole + Y lines, persists across all steps */}
-        {(isShow || isDo || isTeach) && strategyBond && strategyBond.whole != null && (
-          <View style={styles.bondHeader} pointerEvents="none">
-            <Text style={styles.bondWhole}>{strategyBond.whole}</Text>
-            <View style={styles.bondLines}>
-              <View style={[styles.bondLine, styles.bondLineLeft]} />
-              <View style={[styles.bondLine, styles.bondLineRight]} />
+        <View style={styles.framesWrap}>
+          {/* Spectator group (no bond header above) */}
+          {spectatorFrames.length > 0 && (
+            <View style={styles.spectatorGroup}>
+              {spectatorFrames.map(renderFrameAt)}
+            </View>
+          )}
+
+          {/* Active group with bond header centered above */}
+          <View style={styles.activeGroup}>
+            {strategyBond && strategyBond.whole != null && (
+              <View style={styles.bondHeader} pointerEvents="none">
+                <Text style={styles.bondWhole}>{strategyBond.whole}</Text>
+                <View style={styles.bondLines}>
+                  <View style={[styles.bondLine, styles.bondLineLeft]} />
+                  <View style={[styles.bondLine, styles.bondLineRight]} />
+                </View>
+              </View>
+            )}
+            <View style={styles.activeFramesRow}>
+              {activeFrames.map(renderFrameAt)}
             </View>
           </View>
-        )}
-
-        <View style={styles.framesWrap}>
-          {frames.map((f, idx) => {
-            const isTarget = idx === targetFrameIndex && !isShow;
-            const remaining =
-              (currentStep.actionCount ?? 0) - actionCountThisStep;
-            const highlightCells =
-              isDo && isTarget
-                ? computeHighlightCells(f.cells, currentStep.action, remaining)
-                : [];
-
-            // Bond label per frame:
-            //   - If a strategy bond exists AND this frame is a bond target,
-            //     show the bond part value (constant across all steps)
-            //   - Mark bondDone once we're past the action step for that part
-            //   - Otherwise, show the live dot count
-            let bondLabel = countCells(f.cells);
-            let bondColor = 'green';
-            let bondDone = false;
-            if ((isShow || isDo || isTeach) && strategyBond) {
-              const sbColor = isAdd ? 'green' : 'red';
-              for (let bi = 0; bi < strategyBond.targets.length; bi++) {
-                const tgt = strategyBond.targets[bi];
-                const matches =
-                  tgt === 'next-frame'
-                    ? f.role === 'empty' &&
-                      countCells(f.finalCells || []) > 0
-                    : f.role === tgt;
-                if (matches) {
-                  bondLabel = strategyBond.parts[bi];
-                  bondColor = sbColor;
-                  // Bond part bi corresponds to step (bi + 1).
-                  // It's "done" once we're past that step.
-                  bondDone = stepIndex > bi + 1;
-                  break;
-                }
-              }
-            }
-
-            return (
-              <Pressable
-                key={f.index}
-                onPress={handleFrameTap}
-                style={styles.frameTouch}
-              >
-                <TenFrame
-                  cells={f.cells}
-                  role={f.role}
-                  interactive={isTarget}
-                  isTarget={isTarget || (isShow && idx === resolveTargetIdx(frames, currentStep.target))}
-                  mode={currentStep.action === 'add' ? 'add' : 'remove'}
-                  hintTrigger={hintTrigger}
-                  highlightCells={highlightCells}
-                  bondLabel={bondLabel}
-                  bondColor={bondColor}
-                  bondDone={bondDone}
-                  onCellPress={(cellIdx) => handleValidCellPress(idx, cellIdx)}
-                />
-              </Pressable>
-            );
-          })}
         </View>
 
         {/* Equation/instruction card hidden — bonds carry the explanation. */}
@@ -459,6 +510,18 @@ export default function SolveScreen({ route, navigation }) {
             }}
           >
             <Text style={styles.skipBtnText}>Skip ahead</Text>
+          </Pressable>
+        )}
+
+        {(isDo || isTeach) && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.startOverBtn,
+              pressed && { opacity: 0.85 },
+            ]}
+            onPress={restartCurrentPhase}
+          >
+            <Text style={styles.startOverBtnText}>↺ Start over</Text>
           </Pressable>
         )}
       </ScrollView>
@@ -543,9 +606,18 @@ const styles = StyleSheet.create({
   },
   framesWrap: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'flex-end',
     justifyContent: 'center',
     marginBottom: theme.spacing.lg,
+  },
+  spectatorGroup: {
+    flexDirection: 'row',
+  },
+  activeGroup: {
+    alignItems: 'center',
+  },
+  activeFramesRow: {
+    flexDirection: 'row',
   },
   frameTouch: {},
   instructionCard: {
@@ -613,5 +685,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     letterSpacing: 1,
+  },
+  startOverBtn: {
+    marginTop: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: theme.colors.frameBorder,
+    backgroundColor: theme.colors.frameBg,
+  },
+  startOverBtnText: {
+    color: theme.colors.ink,
+    fontSize: 16,
+    fontWeight: '800',
   },
 });

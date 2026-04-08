@@ -58,21 +58,43 @@ function buildSubSteps(strategy, minuend, subtrahend) {
 
   if (strategy === STRATEGIES.TAKE_FROM_TEN) {
     const remainingInTen = 10 - subtrahend;
+    const tens = Math.floor(minuend / 10);
+    const staticTotal = 10 * Math.max(0, tens - 1);
+    const workingPart = 10 + ones; // active-ten + active-ones
+    const finalTotal = staticTotal + remainingInTen + ones;
+
     return [
       {
+        instruction: `${workingPart} = 10 + ${ones}`,
+        spokenInstruction: `${workingPart} splits into ten and ${ones}`,
+        target: null,
+        actionCount: 0,
+        action: null,
+        showBond: true,
+        bondParts: [10, ones],
+        bondTargets: ['active-ten', 'active-ones'],
+        bondWhole: workingPart,
+        numericLine: `${workingPart} = 10 + ${ones}`,
+      },
+      {
         instruction: `Take ${subtrahend} from the ten.`,
+        spokenInstruction: `Take ${subtrahend} from the ten`,
         target: 'active-ten',
         actionCount: subtrahend,
         action: 'remove',
         numericLine: `10 − ${subtrahend} = ${remainingInTen}`,
       },
       {
-        instruction: `${remainingInTen} + ${ones} = ${remainingInTen + ones}`,
+        instruction: `${finalTotal}!`,
+        spokenInstruction:
+          staticTotal > 0
+            ? `${remainingInTen} plus ${ones} equals ${remainingInTen + ones}, plus ${staticTotal} equals ${finalTotal}`
+            : `${remainingInTen} plus ${ones} equals ${finalTotal}`,
         target: null,
         actionCount: 0,
         action: null,
         isFinal: true,
-        numericLine: `${remainingInTen} + ${ones} = ${remainingInTen + ones}`,
+        numericLine: `= ${finalTotal}`,
       },
     ];
   }
@@ -83,6 +105,7 @@ function buildSubSteps(strategy, minuend, subtrahend) {
     return [
       {
         instruction: `${subtrahend} = ${firstChunk} + ${secondChunk}`,
+        spokenInstruction: `${subtrahend} splits into ${firstChunk} and ${secondChunk}`,
         target: null,
         actionCount: 0,
         action: null,
@@ -94,6 +117,7 @@ function buildSubSteps(strategy, minuend, subtrahend) {
       },
       {
         instruction: `Take ${firstChunk}.`,
+        spokenInstruction: `Take ${firstChunk}`,
         target: 'active-ones',
         actionCount: firstChunk,
         action: 'remove',
@@ -101,19 +125,30 @@ function buildSubSteps(strategy, minuend, subtrahend) {
       },
       {
         instruction: `Take ${secondChunk}.`,
+        spokenInstruction: `Take ${secondChunk}`,
         target: 'active-ten',
         actionCount: secondChunk,
         action: 'remove',
         numericLine: `10 − ${secondChunk} = ${10 - secondChunk}`,
       },
-      {
-        instruction: `${minuend - subtrahend}!`,
-        target: null,
-        actionCount: 0,
-        action: null,
-        isFinal: true,
-        numericLine: `= ${minuend - subtrahend}`,
-      },
+      (() => {
+        const tens = Math.floor(minuend / 10);
+        const staticTotal = 10 * Math.max(0, tens - 1);
+        const activeTenLeft = 10 - secondChunk;
+        const total = minuend - subtrahend;
+        return {
+          instruction: `${total}!`,
+          spokenInstruction:
+            staticTotal > 0
+              ? `${activeTenLeft} plus ${staticTotal} equals ${total}`
+              : `${total}`,
+          target: null,
+          actionCount: 0,
+          action: null,
+          isFinal: true,
+          numericLine: `= ${total}`,
+        };
+      })(),
     ];
   }
 
