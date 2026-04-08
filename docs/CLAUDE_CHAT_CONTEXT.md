@@ -258,6 +258,13 @@ Lillie's tutor (Mitch) clarified the framing: this app's purpose is to **explain
 ### v1.3.1 (April 7, 2026)
 - "Highlight which to tap" — DotGrid renders the next N "should-tap" cells with a pulsing yellow↔orange ring. SolveScreen computes the set per step (last N filled in remove mode, first N empty in add mode) and recomputes after each tap. Guides without forcing — any valid cell still works.
 
+### Session G.4 — v1.6.4 (April 7, 2026): Make a Ten addition fix
+- **Bug**: MAKE_A_TEN strategy was using bondTargets `['active-ones', 'next-frame']` which didn't match how frames are actually labeled by `classifyAddInitial`.
+- **Why it was wrong**: `classifyAddInitial(a, b)` calls `classifyFrames(SUM, b)` to get frames sized for the SUM. Roles are then assigned based on the FINAL state — so the partial frame currently holding the existing ones (e.g. 5 out of 10 for a=25) is labeled `active-ten` because in the final state it WILL be full. The new frame for the leftover ones is labeled `active-ones`.
+- **Fix**: bondTargets corrected to `['active-ten', 'active-ones']`. Action step targets fixed: fill-the-ten step now targets `active-ten` (the frame currently partial), overflow step targets `active-ones` (the new frame).
+- **For 25+7 specifically**: Frames are [10, 10, 5/10, 0/2]. Spectators are the first two 10s (with aggregate "20" gray label). Active group is the partial 5 frame and the empty 2 frame. Bond shows 7 → (5)(2): the 5 satellite sits above the 5/10 frame (where we add 5 to fill the ten), the 2 satellite sits above the 0/2 frame (where the overflow lands). This matches Mitch's expected behavior: "add 5 to fill up the remaining and then 2 in the leftover one."
+- ADD_DIRECT was already correct (it targets active-ones which is the right frame for tier 1 cases).
+
 ### Session G.3 — v1.6.3 (April 7, 2026): Spectator aggregate label + mute button fix
 - **Spectator aggregate**: when there are 2+ spectator frames (minuend ≥ 30), the per-frame green (10) labels are hidden and replaced with a single gray aggregate label centered above the spectator group ("20" for two spectators, "30" for three).
 - 1 spectator (20-29): unchanged — keeps the per-frame green (10).

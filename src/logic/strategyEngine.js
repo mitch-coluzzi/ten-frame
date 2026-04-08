@@ -185,34 +185,41 @@ function buildAddSteps(strategy, first, addend) {
   if (strategy === STRATEGIES.MAKE_A_TEN) {
     const fillToTen = openInActive;       // dots needed to finish the current ten
     const overflow = addend - fillToTen;  // remaining dots → next frame
+    // Frame role labels come from classifyFrames(SUM), so the frame
+    // currently partial that WILL become full is labeled 'active-ten',
+    // and the frame that WILL hold the leftover ones is 'active-ones'.
     return [
       {
         instruction: `${addend} = ${fillToTen} + ${overflow}`,
+        spokenInstruction: `${addend} splits into ${fillToTen} and ${overflow}`,
         target: null,
         actionCount: 0,
         action: null,
         showBond: true,
         bondParts: [fillToTen, overflow],
-        bondTargets: ['active-ones', 'next-frame'],
+        bondTargets: ['active-ten', 'active-ones'],
         bondWhole: addend,
         numericLine: `${addend} = ${fillToTen} + ${overflow}`,
       },
       {
         instruction: `Add ${fillToTen} to finish the ten.`,
-        target: 'active-ones',
+        spokenInstruction: `Add ${fillToTen} to finish the ten`,
+        target: 'active-ten',
         actionCount: fillToTen,
         action: 'add',
         numericLine: `${first} + ${fillToTen} = ${first + fillToTen}`,
       },
       {
-        instruction: `Add ${overflow} to the new frame.`,
-        target: 'next-frame',
+        instruction: `Add ${overflow} to the ones.`,
+        spokenInstruction: `Add ${overflow} to the ones`,
+        target: 'active-ones',
         actionCount: overflow,
         action: 'add',
         numericLine: `${first + fillToTen} + ${overflow} = ${first + addend}`,
       },
       {
         instruction: `${first + addend}!`,
+        spokenInstruction: `${first + addend}`,
         target: null,
         actionCount: 0,
         action: null,
